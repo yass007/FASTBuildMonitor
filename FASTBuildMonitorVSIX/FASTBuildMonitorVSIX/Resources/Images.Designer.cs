@@ -63,6 +63,36 @@ namespace FASTBuildMonitorVSIX.Resources {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap BuildStatusErrors {
+            get {
+                object obj = ResourceManager.GetObject("BuildStatusErrors", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap BuildStatusOK {
+            get {
+                object obj = ResourceManager.GetObject("BuildStatusOK", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap BuildStatusWarnings {
+            get {
+                object obj = ResourceManager.GetObject("BuildStatusWarnings", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Failed {
             get {
                 object obj = ResourceManager.GetObject("Failed", resourceCulture);

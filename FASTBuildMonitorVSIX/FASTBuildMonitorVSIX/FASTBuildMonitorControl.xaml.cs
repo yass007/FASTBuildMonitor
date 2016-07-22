@@ -762,7 +762,9 @@ namespace FASTBuildMonitorVSIX
 
             _fileBuffer.Clear();
 
-            _isBuildInProgress = false;
+            _buildRunningState = eBuildRunningState.Ready;
+            _buildStatus = eBuildStatus.AllClear;
+            StatusBarBuildStatusImage.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusOK);
 
             _stopWatch.Restart();
             _latestTimeStamp = 0;
@@ -794,9 +796,93 @@ namespace FASTBuildMonitorVSIX
             ResetOutputWindowCombox();
         }
 
+        /* Build State Management */
+        public enum eBuildRunningState
+        {
+            Ready = 0,
+            Running,
+        }
+
+        private static eBuildRunningState _buildRunningState;
+
+        public void UpdateStatusBar()
+        {
+            switch (_buildRunningState)
+            {
+                case eBuildRunningState.Ready:
+                    StatusBarBuildStatus.Text = "Ready";
+            	break;
+                case eBuildRunningState.Running:
+                    StatusBarBuildStatus.Text = "Running";
+                    break;
+            }
+
+            int numCores = 0;
+            foreach (DictionaryEntry entry in _hosts)
+            {
+                BuildHost host = entry.Value as BuildHost;
+
+                if (host._name.Contains(_cLocalHostName))
+                {
+                    numCores += host._cores.Count;
+                }
+                else
+                {
+                    numCores += host._cores.Count - 1;
+                }
+            }
+
+            StatusBarDetails.Text = string.Format("{0} Agents - {1} Cores", _hosts.Count, numCores);
+
+
+            StatusBarBuildTime.Text = "Build Time: " + GetTimeFormattedString2(GetCurrentBuildTimeMS());
+
+        }
+
+        public enum eBuildStatus
+        {
+            AllClear = 0,
+            HasWarnings,
+            HasErrors,
+        }
+        private static eBuildStatus _buildStatus;
+
+        public void UpdateBuildStatus(BuildEventState jobResult)
+        {
+            eBuildStatus newBuildStatus = _buildStatus;
+
+            switch (jobResult)
+            {
+                case BuildEventState.FAILED:
+                    newBuildStatus = eBuildStatus.HasErrors;
+                    break;
+
+                case BuildEventState.TIMEOUT:
+                case BuildEventState.SUCCEEDED_WITH_WARNINGS:
+                    if ((int)_buildStatus < (int)eBuildStatus.HasWarnings)
+                    {
+                        newBuildStatus = eBuildStatus.HasWarnings;
+                    }
+                    break;
+            }
+
+            if (_buildStatus != newBuildStatus)
+            {
+                switch (newBuildStatus)
+                {
+                    case eBuildStatus.HasErrors:
+                        StatusBarBuildStatusImage.Source =  GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusErrors);
+                        break;
+                    case eBuildStatus.HasWarnings:
+                        StatusBarBuildStatusImage.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusWarnings);
+                        break;
+                }
+
+                _buildStatus = newBuildStatus;
+            }
+        }
 
         /* Time management */
-        private static bool _isBuildInProgress = false;
         private static Stopwatch _stopWatch = new Stopwatch();
         private static Int64 _latestTimeStamp = 0;
         private static void SetTimeReference(Int64 timeStampMS)
@@ -1099,6 +1185,7 @@ namespace FASTBuildMonitorVSIX
             IN_PROGRESS,
             FAILED,
             SUCCEEDED,
+            SUCCEEDED_WITH_WARNINGS,
             TIMEOUT
         }
 
@@ -1256,7 +1343,7 @@ namespace FASTBuildMonitorVSIX
                 switch (_state)
                 {
                     case BuildEventState.SUCCEEDED:
-                        if (_name.Contains("cpp"))
+                        if (_name.Contains(".cpp") || _name.Contains(".c"))
                         {
                             _brush = _sSuccessCodeBrush;
                         }
@@ -1692,7 +1779,7 @@ namespace FASTBuildMonitorVSIX
                                 ExecuteCommandStopBuild(tokens);
                                 break;
                             case BuildEventCommand.START_JOB:
-                                ExecutCommandStartJob(tokens);
+                                ExecuteCommandStartJob(tokens);
                                 break;
                             case BuildEventCommand.FINISH_JOB:
                                 ExecuteCommandFinishJob(tokens);
@@ -1711,7 +1798,7 @@ namespace FASTBuildMonitorVSIX
         // Commands handling
         private void ExecuteCommandStartBuild(string[] tokens)
         {
-            _isBuildInProgress = true;
+            _buildRunningState = eBuildRunningState.Running;
 
             HeartBeat.StartAnimation();
 
@@ -1738,15 +1825,15 @@ namespace FASTBuildMonitorVSIX
             _stopWatch.Reset();
 
             _bPreparingBuildsteps = false;
-            
-            _isBuildInProgress = false;
 
+            _buildRunningState = eBuildRunningState.Ready;
+            
             HeartBeat.StopAnimation();
 
             HeartBeat.ToolTip = null;
         }
 
-        private void ExecutCommandStartJob(string[] tokens)
+        private void ExecuteCommandStartJob(string[] tokens)
         {
             Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
             string hostName = tokens[CommandArgumentIndex.START_JOB_HOST_NAME];
@@ -1790,12 +1877,15 @@ namespace FASTBuildMonitorVSIX
             }
 
             BuildEventState jobResult = TranslateBuildEventState(jobResultString);
-
+            
             foreach (DictionaryEntry entry in _hosts)
             {
                 BuildHost host = entry.Value as BuildHost;
                 host.OnCompleteEvent(timeStamp, eventName, jobResult, eventOutputMessages);
             }
+
+            // Update the build status after each job's result
+            UpdateBuildStatus(jobResult);
         }
 
         private static bool IsObjectVisible(Rect objectRect)
@@ -2066,6 +2156,31 @@ namespace FASTBuildMonitorVSIX
             return formattedText;
         }
 
+        private static string GetTimeFormattedString2(Int64 timeMS)
+        {
+            Int64 remainingTimeSeconds = timeMS / 1000;
+
+            int hours = (int)(remainingTimeSeconds / (60 * 60));
+            remainingTimeSeconds -= hours * 60 * 60;
+
+            int minutes = (int)(remainingTimeSeconds / (60));
+            remainingTimeSeconds -= minutes * 60;
+
+            string formattedText;
+
+            if (hours > 0)
+            {
+                formattedText = string.Format("{0}h {1}m {2}s", hours, minutes, remainingTimeSeconds);
+            }
+            else
+            {
+                formattedText = string.Format("{0}m {1}s", minutes, remainingTimeSeconds);
+            }
+
+            return formattedText;
+        }
+
+
         TimeBar _timeBar = null;
 
         private class TimeBar : Canvas
@@ -2238,6 +2353,8 @@ namespace FASTBuildMonitorVSIX
             ProcessInputFileStream();
 
             RenderUpdate();
+
+            UpdateStatusBar();
         }
     }
 }

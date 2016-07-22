@@ -77,6 +77,9 @@
     </VSCTCompile>
     <Content Include="index.html" />
     <None Include="Resources\Failed.png" />
+    <None Include="Resources\BuildStatusErrors.png" />
+    <None Include="Resources\BuildStatusOK.png" />
+    <None Include="Resources\BuildStatusWarnings.png" />
     <Content Include="Resources\FASTBuildMonitorCommand.png" />
     <Content Include="Resources\FASTBuildMonitorPackage.ico" />
     <None Include="Resources\LODBlock.png" />
