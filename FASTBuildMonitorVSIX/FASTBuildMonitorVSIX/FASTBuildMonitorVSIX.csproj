@@ -80,12 +80,14 @@
     <None Include="Resources\BuildStatusErrors.png" />
     <None Include="Resources\BuildStatusOK.png" />
     <None Include="Resources\BuildStatusWarnings.png" />
+    <None Include="Resources\box.gif" />
     <Content Include="Resources\FASTBuildMonitorCommand.png" />
     <Content Include="Resources\FASTBuildMonitorPackage.ico" />
     <None Include="Resources\LODBlock.png" />
     <None Include="Resources\Running.png" />
     <None Include="Resources\ProgressBar.gif" />
     <None Include="Resources\HeartBeat.gif" />
+    <None Include="Resources\Spinner.gif" />
     <Content Include="Resources\Success-code.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
@@ -212,6 +214,7 @@
     <EmbeddedResource Include="Resources\Images.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Images.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>

@@ -13,7 +13,8 @@
                 <ItemsPanelTemplate>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="150" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -26,23 +27,26 @@
                     </Grid>
                 </ItemsPanelTemplate>
             </StatusBar.ItemsPanel>
-            <StatusBarItem>
+            <StatusBarItem Margin="0,-2,0,2" >
+                <my:GifImage x:Name="StatusBarRunningGif" Stretch="Uniform" GifSource="box" AutoStart="False" Margin="0,5,0,0" Height="20" VerticalAlignment="Top"/>
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="1" >
                 <TextBlock x:Name="StatusBarBuildStatus" Text ="StatusBarBuildStatus"/>
             </StatusBarItem>
-            <Separator Grid.Column="1" />
-            <StatusBarItem Grid.Column="2">
+            <Separator BorderBrush="LightGray" Grid.Column="2" />            
+            <StatusBarItem Grid.Column="3">
                 <TextBlock x:Name="StatusBarDetails" Text ="StatusBarDetails"/>
             </StatusBarItem>
-            <Separator Grid.Column="3" />
-            <StatusBarItem Grid.Column="4">
+            <Separator BorderBrush="LightGray" Grid.Column="4" />
+            <StatusBarItem Grid.Column="5">
                 <TextBlock x:Name="StatusBarBuildTime" Text ="StatusBarBuildTime"/>
             </StatusBarItem>
-            <Separator Grid.Column="5" />
-            <StatusBarItem Grid.Column="6">
+            <Separator BorderBrush="LightGray" Grid.Column="6" />
+            <StatusBarItem Grid.Column="7">
                 <Image x:Name="StatusBarBuildStatusImage" />
             </StatusBarItem>
-            <Separator Grid.Column="7" />
-            <StatusBarItem Grid.Column="8">
+            <Separator BorderBrush="LightGray" Grid.Column="8" />
+            <StatusBarItem Grid.Column="9">
                 <ProgressBar x:Name="StatusBarProgressBar" Value="0" Width="90" Height="16" />
             </StatusBarItem>
         </StatusBar>
@@ -71,7 +75,6 @@
                     <ScrollViewer x:Name="CoresScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" Margin="10,10,10,25" Grid.Row="1" Grid.Column="0" >
                         <Canvas x:Name="CoresCanvas" HorizontalAlignment="Left" Height="366" VerticalAlignment="Top" Width="148" Margin="0,0,0,0"/>
                     </ScrollViewer>
-                    <my:GifImage x:Name="HeartBeat" Stretch="Uniform" GifSource="HeartBeat" AutoStart="False" Margin="25,5,10,0" Height="20" VerticalAlignment="Top" RenderTransformOrigin="0.517,0.583"/>
                 </Grid>
             </TabItem>
             <TabItem x:Name="TabItemOutput">

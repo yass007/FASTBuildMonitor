@@ -26,13 +26,9 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
-using System.Runtime.InteropServices;
 using System.ComponentModel.Design;
 using Microsoft.Win32;
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.OLE.Interop;
-using Microsoft.VisualStudio.Shell;
 using EnvDTE;
 using EnvDTE80;
 
@@ -766,8 +762,8 @@ namespace FASTBuildMonitorVSIX
             _buildStatus = eBuildStatus.AllClear;
             StatusBarBuildStatusImage.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusOK);
 
-            _stopWatch.Restart();
-            _latestTimeStamp = 0;
+            _buildStartTimeMS = 0;
+            _latestTimeStampMS = 0;
 
             _hosts.Clear();
             _localHost = null;
@@ -883,21 +879,58 @@ namespace FASTBuildMonitorVSIX
         }
 
         /* Time management */
-        private static Stopwatch _stopWatch = new Stopwatch();
-        private static Int64 _latestTimeStamp = 0;
-        private static void SetTimeReference(Int64 timeStampMS)
+        private static Int64 _buildStartTimeMS = 0;
+        private static Int64 _latestTimeStampMS = 0;
+
+        private static Int64 ConvertFileTimeToMS(Int64 fileTime)
         {
-            _stopWatch.Restart();
-            _latestTimeStamp = timeStampMS;
+            // FileTime: Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
+            return fileTime / (10 * 1000);
         }
 
         const double cTimeStepMS = 500.0f;
 
-        private static Int64 GetCurrentBuildTimeMS()
+        private static Int64 GetCurrentBuildTimeMS(bool bUseTimeStep = false)
         {
-            Int64 totalTimeSteps = (Int64)Math.Truncate(_stopWatch.ElapsedMilliseconds / cTimeStepMS);
+            Int64 elapsedBuildTime = -_buildStartTimeMS;
 
-            return _latestTimeStamp + totalTimeSteps * (int)cTimeStepMS;
+            if (_buildRunningState == eBuildRunningState.Running)
+            {
+                Int64 currentTimeMS = DateTime.Now.ToFileTime() / (10 * 1000);
+
+                elapsedBuildTime += currentTimeMS;
+
+                if (bUseTimeStep)
+                {
+                    elapsedBuildTime = (Int64)(Math.Truncate(elapsedBuildTime / cTimeStepMS) * cTimeStepMS);
+                }
+            }
+            else
+            {
+                elapsedBuildTime += _latestTimeStampMS;
+            }
+
+            return elapsedBuildTime;
+        }
+
+        private static Int64 RegisterNewTimeStamp(Int64 fileTime)
+        {
+            _latestTimeStampMS = ConvertFileTimeToMS(fileTime);
+
+            return _latestTimeStampMS;
+        }
+
+        private static bool DetectBuildTimeOut()
+        {
+            const Int64 cBuildTimeOutThresholdMS = 2 * 60 * 1000;
+
+            Int64 currentTimeMS = DateTime.Now.ToFileTime() / (10 * 1000);
+
+            Int64 elapsedTimeMS = currentTimeMS - _latestTimeStampMS;
+
+            bool bTimeout = elapsedTimeMS < 0 || elapsedTimeMS > cBuildTimeOutThresholdMS;           
+
+            return bTimeout;
         }
 
 
@@ -1325,16 +1358,11 @@ namespace FASTBuildMonitorVSIX
 
             public void Stop(Int64 timeFinished, BuildEventState jobResult)
             {
-                if (timeFinished > 0)
-                {
-                    _timeFinished = timeFinished;
-                }
-                else
-                {
-                    _timeFinished = GetCurrentBuildTimeMS();
-                }
+                _timeFinished = timeFinished;
 
                 double totalTimeSeconds = (_timeFinished - _timeStarted) / 1000.0f;
+
+                Debug.Assert(totalTimeSeconds > 0.0f);
 
                 _toolTipText = string.Format("{0}", _name.Replace("\"", "")) + "\nStatus: ";
 
@@ -1452,7 +1480,7 @@ namespace FASTBuildMonitorVSIX
                 if (_state == BuildEventState.IN_PROGRESS)
                 {
                     // Event is in progress
-                    duration = GetCurrentBuildTimeMS() - _timeStarted;
+                    duration = (long)Math.Max(0.0f, GetCurrentBuildTimeMS(true) - _timeStarted);
 
                     Point textSize = ComputeTextSize(_fileName);
 
@@ -1763,8 +1791,8 @@ namespace FASTBuildMonitorVSIX
                     if (tokens.Length >= 2)
                     {
                         // let's get the command timestamp and update our internal time reference
-                        Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
-                        SetTimeReference(timeStamp);
+                        Int64 eventFileTime = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+                        Int64 eventLocalTimeMS = RegisterNewTimeStamp(eventFileTime);
 
                         // parse the command
                         string commandString = tokens[CommandArgumentIndex.COMMAND_TYPE];
@@ -1773,16 +1801,28 @@ namespace FASTBuildMonitorVSIX
                         switch (command)
                         {
                             case BuildEventCommand.START_BUILD:
-                                ExecuteCommandStartBuild(tokens);
+                                if (_buildRunningState == eBuildRunningState.Ready)
+                                {
+                                    ExecuteCommandStartBuild(tokens, eventLocalTimeMS);
+                                }
                                 break;
                             case BuildEventCommand.STOP_BUILD:
-                                ExecuteCommandStopBuild(tokens);
+                                if (_buildRunningState == eBuildRunningState.Running)
+                                {
+                                    ExecuteCommandStopBuild(tokens, eventLocalTimeMS);
+                                }
                                 break;
                             case BuildEventCommand.START_JOB:
-                                ExecuteCommandStartJob(tokens);
+                                if (_buildRunningState == eBuildRunningState.Running)
+                                {
+                                    ExecuteCommandStartJob(tokens, eventLocalTimeMS);
+                                }
                                 break;
                             case BuildEventCommand.FINISH_JOB:
-                                ExecuteCommandFinishJob(tokens);
+                                if (_buildRunningState == eBuildRunningState.Running)
+                                {
+                                    ExecuteCommandFinishJob(tokens, eventLocalTimeMS);
+                                }
                                 break;
                             default:
                                 // Skipping unknown commands
@@ -1793,23 +1833,33 @@ namespace FASTBuildMonitorVSIX
 
                 _lastProcessedPosition += newPayLoadSize;
             }
+
+            // If after we have processed all the pending events the build is still running (no stop event occurred)
+            // check if haven't hit the timeout threshold, in which case force the build to stop!
+            if (_buildRunningState == eBuildRunningState.Running && DetectBuildTimeOut())
+            {
+                ExecuteCommandStopBuild(null, _latestTimeStampMS + 1000); // assume 1sc duration for the last events before the timeout occurred
+            }
         }
 
         // Commands handling
-        private void ExecuteCommandStartBuild(string[] tokens)
+        private void ExecuteCommandStartBuild(string[] tokens, Int64 eventLocalTimeMS)
         {
+            // Record the start time
+            _buildStartTimeMS = eventLocalTimeMS;
+
             _buildRunningState = eBuildRunningState.Running;
 
-            HeartBeat.StartAnimation();
+            StatusBarRunningGif.StartAnimation();
 
             ToolTip newToolTip = new ToolTip();
             newToolTip.Content = "Build in Progress...";
-            HeartBeat.ToolTip = newToolTip;
+            StatusBarRunningGif.ToolTip = newToolTip;
         }
 
-        private void ExecuteCommandStopBuild(string[] tokens)
+        private void ExecuteCommandStopBuild(string[] tokens, Int64 eventLocalTimeMS)
         {
-            Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+            Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
 
             // Stop all the active events currently running
             foreach (DictionaryEntry entry in _hosts)
@@ -1817,25 +1867,23 @@ namespace FASTBuildMonitorVSIX
                 BuildHost host = entry.Value as BuildHost;
                 foreach (CPUCore core in host._cores)
                 {
-                    core.UnScheduleEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.FAILED, "", true);
+                    core.UnScheduleEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.TIMEOUT, "", true);
                 }
             }
-
-            // Stop the live chrono and reset it
-            _stopWatch.Reset();
 
             _bPreparingBuildsteps = false;
 
             _buildRunningState = eBuildRunningState.Ready;
-            
-            HeartBeat.StopAnimation();
 
-            HeartBeat.ToolTip = null;
+            StatusBarRunningGif.StopAnimation();
+
+            StatusBarRunningGif.ToolTip = null;
         }
 
-        private void ExecuteCommandStartJob(string[] tokens)
+        private void ExecuteCommandStartJob(string[] tokens, Int64 eventLocalTimeMS)
         {
-            Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+            Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
+
             string hostName = tokens[CommandArgumentIndex.START_JOB_HOST_NAME];
             string eventName = tokens[CommandArgumentIndex.START_JOB_EVENT_NAME];
 
@@ -1861,9 +1909,10 @@ namespace FASTBuildMonitorVSIX
             host.OnStartEvent(newEvent);
         }
 
-        private void ExecuteCommandFinishJob(string[] tokens)
+        private void ExecuteCommandFinishJob(string[] tokens, Int64 eventLocalTimeMS)
         {
-            Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+            Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
+
             string jobResultString = tokens[CommandArgumentIndex.FINISH_JOB_RESULT];
             string hostName = tokens[CommandArgumentIndex.FINISH_JOB_HOST_NAME];
             string eventName = tokens[CommandArgumentIndex.FINISH_JOB_EVENT_NAME];
@@ -2214,11 +2263,11 @@ namespace FASTBuildMonitorVSIX
                 using (StreamGeometryContext ctx = _geometry.Open())
                 {
                     Int64 totalTimeMS = 0;
-
+                    
                     Int64 numSteps = GetCurrentBuildTimeMS() / (_bigTimeUnit * 1000);
                     Int64 remainder = GetCurrentBuildTimeMS() % (_bigTimeUnit * 1000);
 
-                    numSteps += remainder > 0 ? 1 : 0;
+                    numSteps += remainder > 0 ? 2 : 1;
 
                     Int64 timeLimitMS = numSteps * _bigTimeUnit * 1000;
 
