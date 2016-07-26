@@ -20,8 +20,6 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="20" />
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="100" />
                         </Grid.ColumnDefinitions>
                     </Grid>
@@ -43,10 +41,6 @@
             </StatusBarItem>
             <Separator BorderBrush="LightGray" Grid.Column="6" />
             <StatusBarItem Grid.Column="7">
-                <Image x:Name="StatusBarBuildStatusImage" />
-            </StatusBarItem>
-            <Separator BorderBrush="LightGray" Grid.Column="8" />
-            <StatusBarItem Grid.Column="9">
                 <ProgressBar x:Name="StatusBarProgressBar" Value="0" Width="90" Height="16" />
             </StatusBarItem>
         </StatusBar>

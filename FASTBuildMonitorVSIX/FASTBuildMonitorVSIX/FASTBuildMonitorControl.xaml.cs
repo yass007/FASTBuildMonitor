@@ -760,7 +760,6 @@ namespace FASTBuildMonitorVSIX
 
             _buildRunningState = eBuildRunningState.Ready;
             _buildStatus = eBuildStatus.AllClear;
-            StatusBarBuildStatusImage.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusOK);
 
             _buildStartTimeMS = 0;
             _latestTimeStampMS = 0;
@@ -790,6 +789,10 @@ namespace FASTBuildMonitorVSIX
             _StaticWindow.MyTabControl.SelectedIndex = (int)eTABs.TAB_TimeLine;
             
             ResetOutputWindowCombox();
+
+            // progress status
+            UpdateBuildProgress(0.0f);
+            StatusBarProgressBar.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FF06B025"));
         }
 
         /* Build State Management */
@@ -829,10 +832,6 @@ namespace FASTBuildMonitorVSIX
             }
 
             StatusBarDetails.Text = string.Format("{0} Agents - {1} Cores", _hosts.Count, numCores);
-
-
-            StatusBarBuildTime.Text = "Build Time: " + GetTimeFormattedString2(GetCurrentBuildTimeMS());
-
         }
 
         public enum eBuildStatus
@@ -867,15 +866,32 @@ namespace FASTBuildMonitorVSIX
                 switch (newBuildStatus)
                 {
                     case eBuildStatus.HasErrors:
-                        StatusBarBuildStatusImage.Source =  GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusErrors);
+                        StatusBarProgressBar.Foreground = Brushes.Red;
                         break;
                     case eBuildStatus.HasWarnings:
-                        StatusBarBuildStatusImage.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusWarnings);
+                        StatusBarProgressBar.Foreground = Brushes.Yellow;
                         break;
                 }
 
                 _buildStatus = newBuildStatus;
             }
+        }
+
+        static private float _currentProgressPCT = 0.0f;
+        ToolTip _statusBarProgressToolTip = new ToolTip();
+
+        public void UpdateBuildProgress (float progressPCT)
+        {
+            _currentProgressPCT = progressPCT;
+
+            StatusBarBuildTime.Text = string.Format("Duration: {0}", GetTimeFormattedString2(GetCurrentBuildTimeMS()));
+
+            StatusBarProgressBar.Value = _currentProgressPCT;
+
+
+            StatusBarProgressBar.ToolTip = _statusBarProgressToolTip;
+
+            _statusBarProgressToolTip.Content = string.Format("{0:0.00}%", _currentProgressPCT);
         }
 
         /* Time management */
@@ -1404,8 +1420,10 @@ namespace FASTBuildMonitorVSIX
 
                 if (null!= _outputMessages && _outputMessages.Length >0)
                 {
+                    // show only an extract of the errors so we don't flood the visual
                     int textLength = Math.Min(_outputMessages.Length, 100);
-                    _toolTipText += _outputMessages.Substring(0, textLength);
+
+                    _toolTipText += "\n" + _outputMessages.Substring(0, textLength);
                     _toolTipText += "... [Double-Click on the event to see more details]";
 
                     _outputMessages = string.Format("[Output {0}]: {1}", _name.Replace("\"", ""), Environment.NewLine) + _outputMessages;
@@ -1675,7 +1693,8 @@ namespace FASTBuildMonitorVSIX
             START_BUILD,
             STOP_BUILD,
             START_JOB,
-            FINISH_JOB
+            FINISH_JOB,
+            PROGRESS_STATUS
         }
 
         private BuildEventCommand TranslateBuildEventCommand(string commandString)
@@ -1695,6 +1714,9 @@ namespace FASTBuildMonitorVSIX
                     break;
                 case "FINISH_JOB":
                     output = BuildEventCommand.FINISH_JOB;
+                    break;
+                case "PROGRESS_STATUS":
+                    output = BuildEventCommand.PROGRESS_STATUS;
                     break;
             }
 
@@ -1722,6 +1744,8 @@ namespace FASTBuildMonitorVSIX
             public const int FINISH_JOB_HOST_NAME = 3;
             public const int FINISH_JOB_EVENT_NAME = 4;
             public const int FINISH_JOB_OUTPUT_MESSAGES = 5;
+
+            public const int PROGRESS_STATUS_PROGRESS_PCT = 2;
         }
 
 
@@ -1824,6 +1848,12 @@ namespace FASTBuildMonitorVSIX
                                     ExecuteCommandFinishJob(tokens, eventLocalTimeMS);
                                 }
                                 break;
+                            case BuildEventCommand.PROGRESS_STATUS:
+                                if (_buildRunningState == eBuildRunningState.Running)
+                                {
+                                    ExecuteCommandProgressStatus(tokens);
+                                }
+                                break;
                             default:
                                 // Skipping unknown commands
                                 break;
@@ -1876,8 +1906,9 @@ namespace FASTBuildMonitorVSIX
             _buildRunningState = eBuildRunningState.Ready;
 
             StatusBarRunningGif.StopAnimation();
-
             StatusBarRunningGif.ToolTip = null;
+
+            UpdateBuildProgress(100.0f);
         }
 
         private void ExecuteCommandStartJob(string[] tokens, Int64 eventLocalTimeMS)
@@ -1926,16 +1957,24 @@ namespace FASTBuildMonitorVSIX
             }
 
             BuildEventState jobResult = TranslateBuildEventState(jobResultString);
-            
+
             foreach (DictionaryEntry entry in _hosts)
             {
                 BuildHost host = entry.Value as BuildHost;
                 host.OnCompleteEvent(timeStamp, eventName, jobResult, eventOutputMessages);
             }
 
-            // Update the build status after each job's result
             UpdateBuildStatus(jobResult);
         }
+
+        private void ExecuteCommandProgressStatus(string[] tokens)
+        {
+            float progressPCT = float.Parse(tokens[CommandArgumentIndex.PROGRESS_STATUS_PROGRESS_PCT]);
+
+            // Update the build status after each job's result
+            UpdateBuildProgress(progressPCT);
+        }
+
 
         private static bool IsObjectVisible(Rect objectRect)
         {
