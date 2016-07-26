@@ -21,6 +21,7 @@ using System.Globalization;
 using System.Windows.Media.Animation;
 using System.Text.RegularExpressions;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
@@ -793,10 +794,22 @@ namespace FASTBuildMonitorVSIX
             // progress status
             UpdateBuildProgress(0.0f);
             StatusBarProgressBar.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FF06B025"));
-        }
 
-        /* Build State Management */
-        public enum eBuildRunningState
+
+            // reset to autoscrolling ON
+            _autoScrolling = true;
+
+            // reset our zoom levels
+            _zoomFactor = 1.0f;
+            _zoomFactorOld = 0.1f;
+
+            // target pid
+            _targetPID = 0;
+            _lastTargetPIDCheckTimeMS = 0;
+    }
+
+    /* Build State Management */
+    public enum eBuildRunningState
         {
             Ready = 0,
             Running,
@@ -894,6 +907,50 @@ namespace FASTBuildMonitorVSIX
             _statusBarProgressToolTip.Content = string.Format("{0:0.00}%", _currentProgressPCT);
         }
 
+
+        /* Target Process ID monitoring */
+        private static int _targetPID = 0;
+
+        private static bool IsTargetProcessRunning(int pid)
+        {
+            bool bIsRunning = false;
+            
+            System.Diagnostics.Process[] processlist = System.Diagnostics.Process.GetProcesses();
+            foreach (System.Diagnostics.Process proc in processlist)
+            {
+                if (proc.Id == pid)
+                {
+                    bIsRunning = true;
+                    break;
+                }
+            }
+
+            return bIsRunning;
+        }
+
+        private static Int64 _lastTargetPIDCheckTimeMS = 0;
+        const Int64 cTargetPIDCheckPeriodMS = 1 * 1000;
+
+        private static bool PollIsTargetProcessRunning()
+        {
+            // assume the process is running
+            bool bIsRunning = true;
+
+            if (_targetPID !=0 && _buildRunningState == eBuildRunningState.Running)
+            {
+                Int64 currentTimeMS = GetCurrentSystemTimeMS();
+
+                if ((currentTimeMS - _lastTargetPIDCheckTimeMS) > cTargetPIDCheckPeriodMS)
+                {
+                    bIsRunning = IsTargetProcessRunning(_targetPID);
+
+                    _lastTargetPIDCheckTimeMS = currentTimeMS;
+                }
+            }
+
+            return bIsRunning;
+        }
+
         /* Time management */
         private static Int64 _buildStartTimeMS = 0;
         private static Int64 _latestTimeStampMS = 0;
@@ -906,13 +963,20 @@ namespace FASTBuildMonitorVSIX
 
         const double cTimeStepMS = 500.0f;
 
+        private static Int64 GetCurrentSystemTimeMS()
+        {
+            Int64 currentTimeMS = DateTime.Now.ToFileTime() / (10 * 1000);
+
+            return currentTimeMS;
+        }
+
         private static Int64 GetCurrentBuildTimeMS(bool bUseTimeStep = false)
         {
             Int64 elapsedBuildTime = -_buildStartTimeMS;
 
             if (_buildRunningState == eBuildRunningState.Running)
             {
-                Int64 currentTimeMS = DateTime.Now.ToFileTime() / (10 * 1000);
+                Int64 currentTimeMS = GetCurrentSystemTimeMS();
 
                 elapsedBuildTime += currentTimeMS;
 
@@ -935,20 +999,6 @@ namespace FASTBuildMonitorVSIX
 
             return _latestTimeStampMS;
         }
-
-        private static bool DetectBuildTimeOut()
-        {
-            const Int64 cBuildTimeOutThresholdMS = 2 * 60 * 1000;
-
-            Int64 currentTimeMS = DateTime.Now.ToFileTime() / (10 * 1000);
-
-            Int64 elapsedTimeMS = currentTimeMS - _latestTimeStampMS;
-
-            bool bTimeout = elapsedTimeMS < 0 || elapsedTimeMS > cBuildTimeOutThresholdMS;           
-
-            return bTimeout;
-        }
-
 
         public class CPUCore : Canvas
         {
@@ -1378,7 +1428,7 @@ namespace FASTBuildMonitorVSIX
 
                 double totalTimeSeconds = (_timeFinished - _timeStarted) / 1000.0f;
 
-                Debug.Assert(totalTimeSeconds > 0.0f);
+                Debug.Assert(totalTimeSeconds >= 0.0f);
 
                 _toolTipText = string.Format("{0}", _name.Replace("\"", "")) + "\nStatus: ";
 
@@ -1737,6 +1787,8 @@ namespace FASTBuildMonitorVSIX
             public const int TIME_STAMP = 0;
             public const int COMMAND_TYPE = 1;
 
+            public const int START_BUILD_PID = 2;
+
             public const int START_JOB_HOST_NAME = 2;
             public const int START_JOB_EVENT_NAME = 3;
 
@@ -1864,29 +1916,35 @@ namespace FASTBuildMonitorVSIX
                 _lastProcessedPosition += newPayLoadSize;
             }
 
-            // If after we have processed all the pending events the build is still running (no stop event occurred)
-            // check if haven't hit the timeout threshold, in which case force the build to stop!
-            if (_buildRunningState == eBuildRunningState.Running && DetectBuildTimeOut())
+            if (_buildRunningState == eBuildRunningState.Running && PollIsTargetProcessRunning() ==  false)
             {
-                ExecuteCommandStopBuild(null, _latestTimeStampMS + 1000); // assume 1sc duration for the last events before the timeout occurred
+                _latestTimeStampMS = GetCurrentSystemTimeMS();
+
+                ExecuteCommandStopBuild(null, _latestTimeStampMS);
             }
         }
 
         // Commands handling
         private void ExecuteCommandStartBuild(string[] tokens, Int64 eventLocalTimeMS)
         {
+            int targetPID = int.Parse(tokens[CommandArgumentIndex.START_BUILD_PID]);
+            
+            // remember our valid targetPID
+            _targetPID = targetPID;
+
             // Record the start time
             _buildStartTimeMS = eventLocalTimeMS;
 
             _buildRunningState = eBuildRunningState.Running;
 
+            // start the gif "building" animation
             StatusBarRunningGif.StartAnimation();
 
             ToolTip newToolTip = new ToolTip();
-            newToolTip.Content = "Build in Progress...";
             StatusBarRunningGif.ToolTip = newToolTip;
+            newToolTip.Content = "Build in Progress...";
         }
-
+        
         private void ExecuteCommandStopBuild(string[] tokens, Int64 eventLocalTimeMS)
         {
             Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
