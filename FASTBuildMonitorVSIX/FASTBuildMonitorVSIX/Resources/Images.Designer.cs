@@ -153,9 +153,29 @@ namespace FASTBuildMonitorVSIX.Resources {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap SettingsTabIcon {
+            get {
+                object obj = ResourceManager.GetObject("SettingsTabIcon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Spinner {
             get {
                 object obj = ResourceManager.GetObject("Spinner", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Success_cached {
+            get {
+                object obj = ResourceManager.GetObject("Success_cached", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -176,6 +196,16 @@ namespace FASTBuildMonitorVSIX.Resources {
         internal static System.Drawing.Bitmap Success_noncode {
             get {
                 object obj = ResourceManager.GetObject("Success_noncode", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Success_preprocessed {
+            get {
+                object obj = ResourceManager.GetObject("Success_preprocessed", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

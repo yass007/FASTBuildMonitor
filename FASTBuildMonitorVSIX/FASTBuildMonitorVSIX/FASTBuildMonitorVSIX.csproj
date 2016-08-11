@@ -63,6 +63,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Images.resx</DependentUpon>
     </Compile>
+    <Compile Include="SystemPerformanceGraphsCanvas.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
@@ -88,6 +89,8 @@
     <None Include="Resources\ProgressBar.gif" />
     <None Include="Resources\HeartBeat.gif" />
     <None Include="Resources\Spinner.gif" />
+    <None Include="Resources\Success-cached.png" />
+    <None Include="Resources\SettingsTabIcon.png" />
     <Content Include="Resources\Success-code.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
@@ -98,6 +101,7 @@
     <None Include="Resources\Warning.png" />
     <None Include="Resources\TextOutputTabIcon.png" />
     <None Include="Resources\TimeLineTabIcon.png" />
+    <None Include="Resources\Success-preprocessed.png" />
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
