@@ -122,13 +122,14 @@ namespace FASTBuildMonitorVSIX
         }
     }
 
-
     /// <summary>
     /// Interaction logic for MyControl.xaml
     /// </summary>
     /// 
     public partial class FASTBuildMonitorControl : UserControl
     {
+        public const int LOG_VERSION = 1;
+
         private DispatcherTimer _timer;
 
         private static List<Rectangle> _bars = new List<Rectangle>();
@@ -1889,7 +1890,8 @@ namespace FASTBuildMonitorVSIX
             public const int TIME_STAMP = 0;
             public const int COMMAND_TYPE = 1;
 
-            public const int START_BUILD_PID = 2;
+            public const int START_BUILD_LOG_VERSION = 2;
+            public const int START_BUILD_PID = 3;
 
             public const int START_JOB_HOST_NAME = 2;
             public const int START_JOB_EVENT_NAME = 3;
@@ -2055,27 +2057,32 @@ namespace FASTBuildMonitorVSIX
         // Commands handling
         private void ExecuteCommandStartBuild(string[] tokens, Int64 eventLocalTimeMS)
         {
-            int targetPID = int.Parse(tokens[CommandArgumentIndex.START_BUILD_PID]);
+            int logVersion = int.Parse(tokens[CommandArgumentIndex.START_BUILD_LOG_VERSION]);
 
-            // remember our valid targetPID
-            _targetPID = targetPID;
+            if (logVersion == FASTBuildMonitorControl.LOG_VERSION)
+            {
+                int targetPID = int.Parse(tokens[CommandArgumentIndex.START_BUILD_PID]);
 
-            // determine if we are in a live session (target PID is running when we receive a start build command)
-            _isLiveSession = IsTargetProcessRunning(_targetPID);
+                // remember our valid targetPID
+                _targetPID = targetPID;
 
-            _systemPerformanceGraphs.OpenSession(_isLiveSession, _targetPID);
+                // determine if we are in a live session (target PID is running when we receive a start build command)
+                _isLiveSession = IsTargetProcessRunning(_targetPID);
 
-            // Record the start time
-            _buildStartTimeMS = eventLocalTimeMS;
+                _systemPerformanceGraphs.OpenSession(_isLiveSession, _targetPID);
 
-            _buildRunningState = eBuildRunningState.Running;
+                // Record the start time
+                _buildStartTimeMS = eventLocalTimeMS;
 
-            // start the gif "building" animation
-            StatusBarRunningGif.StartAnimation();
+                _buildRunningState = eBuildRunningState.Running;
 
-            ToolTip newToolTip = new ToolTip();
-            StatusBarRunningGif.ToolTip = newToolTip;
-            newToolTip.Content = "Build in Progress...";
+                // start the gif "building" animation
+                StatusBarRunningGif.StartAnimation();
+
+                ToolTip newToolTip = new ToolTip();
+                StatusBarRunningGif.ToolTip = newToolTip;
+                newToolTip.Content = "Build in Progress...";
+            }
         }
 
         private void ExecuteCommandStopBuild(string[] tokens, Int64 eventLocalTimeMS)
