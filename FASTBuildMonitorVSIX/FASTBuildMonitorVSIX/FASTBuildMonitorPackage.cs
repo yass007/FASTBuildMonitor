@@ -137,15 +137,13 @@ namespace FASTBuildMonitorVSIX
                     }
                     catch (System.Exception ex)
                     {
-
-                        Console.WriteLine("Exception!");
+                        Console.WriteLine("Exception! " + ex.ToString());
                     }
                 }
             }
             catch (System.Exception ex)
             {
-
-                Console.WriteLine("Exception!");
+                Console.WriteLine("Exception! " + ex.ToString());
             }
         }
 

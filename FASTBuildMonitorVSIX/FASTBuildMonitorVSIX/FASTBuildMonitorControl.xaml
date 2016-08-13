@@ -13,36 +13,34 @@
                 <ItemsPanelTemplate>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="150" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="20" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="100" />
                         </Grid.ColumnDefinitions>
                     </Grid>
                 </ItemsPanelTemplate>
             </StatusBar.ItemsPanel>
-            <StatusBarItem>
+            <StatusBarItem Margin="0,-2,0,2" >
+                <my:GifImage x:Name="StatusBarRunningGif" Stretch="Uniform" GifSource="box" AutoStart="False" Margin="0,5,0,0" Height="20" VerticalAlignment="Top"/>
+            </StatusBarItem>
+            <StatusBarItem Grid.Column="1" >
                 <TextBlock x:Name="StatusBarBuildStatus" Text ="StatusBarBuildStatus"/>
             </StatusBarItem>
-            <Separator Grid.Column="1" />
-            <StatusBarItem Grid.Column="2">
+            <Separator BorderBrush="LightGray" Grid.Column="2" />
+            <StatusBarItem Grid.Column="3">
                 <TextBlock x:Name="StatusBarDetails" Text ="StatusBarDetails"/>
             </StatusBarItem>
-            <Separator Grid.Column="3" />
-            <StatusBarItem Grid.Column="4">
+            <Separator BorderBrush="LightGray" Grid.Column="4" />
+            <StatusBarItem Grid.Column="5">
                 <TextBlock x:Name="StatusBarBuildTime" Text ="StatusBarBuildTime"/>
             </StatusBarItem>
-            <Separator Grid.Column="5" />
-            <StatusBarItem Grid.Column="6">
-                <Image x:Name="StatusBarBuildStatusImage" />
-            </StatusBarItem>
-            <Separator Grid.Column="7" />
-            <StatusBarItem Grid.Column="8">
+            <Separator BorderBrush="LightGray" Grid.Column="6" />
+            <StatusBarItem Grid.Column="7">
                 <ProgressBar x:Name="StatusBarProgressBar" Value="0" Width="90" Height="16" />
             </StatusBarItem>
         </StatusBar>
@@ -55,23 +53,27 @@
                 </TabItem.Header>
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" MaxHeight="150"/>
                         <RowDefinition Height="30"/>
-                        <RowDefinition Height="93*"/>
+                        <RowDefinition/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" MinWidth="168"/>
+                        <ColumnDefinition Width="Auto" MaxWidth="250"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <ScrollViewer x:Name="EventsScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollChanged="ScrollViewer_ScrollChanged" Margin="10,10,10,0" Grid.Row="1" Grid.Column="1" >
-                        <Canvas x:Name="EventsCanvas" HorizontalAlignment="Left" Height="Auto" VerticalAlignment="Top" Width="Auto" Margin="0,0,0,0"/>
+                    <ScrollViewer x:Name="SystemGraphsScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" Grid.Row="0" Grid.Column="1" Margin="7,0,20,0" VerticalAlignment="Top" Width="Auto" Height ="Auto">
+                        <Canvas x:Name="SystemGraphsCanvas" HorizontalAlignment="Left" Height="Auto" VerticalAlignment="Top" Width="Auto" Margin="0,0,0,0"/>
                     </ScrollViewer>
-                    <ScrollViewer x:Name="TimeBarScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" Grid.Row="0" Grid.Column="1" Margin="7,5,20,5">
+                    <ScrollViewer x:Name="TimeBarScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" Grid.Row="1" Grid.Column="1" Margin="7,2,20,5">
                         <Canvas x:Name="TimeBarCanvas" HorizontalAlignment="Left" Height="Auto" VerticalAlignment="Top" Width="Auto" Margin="0,0,0,0"/>
                     </ScrollViewer>
-                    <ScrollViewer x:Name="CoresScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" Margin="10,10,10,25" Grid.Row="1" Grid.Column="0" >
+                    <ScrollViewer x:Name="EventsScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollChanged="ScrollViewer_ScrollChanged" Margin="10,10,10,0" Grid.Row="2" Grid.Column="1" >
+                        <Canvas x:Name="EventsCanvas" HorizontalAlignment="Left" Height="Auto" VerticalAlignment="Top" Width="Auto" Margin="0,0,0,0"/>
+                    </ScrollViewer>
+                    <TreeView x:Name="graphsSelectionTreeView" BorderBrush="#FFDEE2EA" Visibility =" Hidden" Margin="0,0,0,0" Grid.Row="0" Grid.Column="0" Height="150"/>
+                    <ScrollViewer x:Name="CoresScrollViewer" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" Margin="10,10,10,25" Grid.Row="2" Grid.Column="0" >
                         <Canvas x:Name="CoresCanvas" HorizontalAlignment="Left" Height="366" VerticalAlignment="Top" Width="148" Margin="0,0,0,0"/>
                     </ScrollViewer>
-                    <my:GifImage x:Name="HeartBeat" Stretch="Uniform" GifSource="HeartBeat" AutoStart="False" Margin="25,5,10,0" Height="20" VerticalAlignment="Top" RenderTransformOrigin="0.517,0.583"/>
                 </Grid>
             </TabItem>
             <TabItem x:Name="TabItemOutput">
@@ -88,6 +90,23 @@
                     <ComboBox x:Name="OutputWindowComboBox" ItemsSource="{Binding FASTBuildMonitorControl._outputComboBoxFilters}" DisplayMemberPath="_name" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="330" Grid.Row="0" HorizontalContentAlignment="Left"/>
                     <Label x:Name="label" Content="Press (SPACE) to reset filter" HorizontalAlignment="Left" Margin="345,10,0,0" VerticalAlignment="Top" Width="155" Grid.Row="0"/>
                     <TextBox x:Name="OutputTextBox" AcceptsReturn="True"  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Grid.Row="1" Margin="0,0,10,0"/>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="TabItemSettings">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Settings" Foreground="Blue" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="0,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <GroupBox x:Name="SettingsGroupBox" Header="Settings" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="1" VerticalAlignment="Top" Height="85" Width="165">
+                        <CheckBox x:Name="SettingsGraphsCheckBox" Content="Show System Graphs" HorizontalAlignment="Left" Margin="10,22,0,0" VerticalAlignment="Top" Checked="checkBox_Checked" Unchecked="checkBox_Unchecked"/>
+                    </GroupBox>
+
                 </Grid>
             </TabItem>
         </TabControl>

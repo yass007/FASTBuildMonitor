@@ -3,36 +3,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.IO;
 using System.Diagnostics;
 using System.Collections;
-using System.Globalization;
 using System.Windows.Media.Animation;
 using System.Text.RegularExpressions;
 using System.Collections.ObjectModel;
-
-using System.Runtime.InteropServices;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.OLE.Interop;
-using Microsoft.VisualStudio.Shell;
-using System.Runtime.InteropServices;
-using System.ComponentModel.Design;
-using Microsoft.Win32;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.OLE.Interop;
-using Microsoft.VisualStudio.Shell;
 using EnvDTE;
 using EnvDTE80;
 
@@ -150,17 +133,17 @@ namespace FASTBuildMonitorVSIX
 
         private static List<Rectangle> _bars = new List<Rectangle>();
 
-        private static FASTBuildMonitorControl _StaticWindow = null;
+        public static FASTBuildMonitorControl _StaticWindow = null;
 
         public FASTBuildMonitorControl()
         {
+            _StaticWindow = this;
+
             // WPF init flow
             InitializeComponent();
 
             // Our internal init
             InitializeInternalState();
-
-            _StaticWindow = this;
         }
 
         private void InitializeInternalState()
@@ -182,6 +165,9 @@ namespace FASTBuildMonitorVSIX
             // Time bar display
             _timeBar = new TimeBar(TimeBarCanvas);
 
+            // System Graphs display
+            _systemPerformanceGraphs = new SystemPerformanceGraphsCanvas(SystemGraphsCanvas);
+
             //events
             this.Loaded += FASTBuildMonitorControl_Loaded;
 
@@ -199,7 +185,7 @@ namespace FASTBuildMonitorVSIX
             EventsScrollViewer.MouseUp += EventsScrollViewer_MouseUp;
             MouseUp += EventsScrollViewer_MouseUp;
             EventsCanvas.MouseUp += EventsScrollViewer_MouseUp;
-            
+
             EventsScrollViewer.PreviewMouseDoubleClick += EventsScrollViewer_MouseDoubleClick;
             EventsScrollViewer.MouseDoubleClick += EventsScrollViewer_MouseDoubleClick;
 
@@ -211,13 +197,26 @@ namespace FASTBuildMonitorVSIX
 
             OutputWindowComboBox.SelectionChanged += OutputWindowComboBox_SelectionChanged;
 
-            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => {
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+            {
                 //update timer
                 _timer = new DispatcherTimer();
                 _timer.Tick += HandleTick;
                 _timer.Interval = new TimeSpan(TimeSpan.TicksPerMillisecond * 16);
                 _timer.Start();
             }));
+        }
+
+
+        /* Settings Tab Check boxes */
+        private void checkBox_Checked(object sender, RoutedEventArgs e)
+        {
+            _systemPerformanceGraphs.SetVisibility((bool)(sender as CheckBox).IsChecked);
+        }
+
+        private void checkBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _systemPerformanceGraphs.SetVisibility((bool)(sender as CheckBox).IsChecked);
         }
 
 
@@ -247,7 +246,7 @@ namespace FASTBuildMonitorVSIX
                 String doubleClickedWord = tb.SelectedText;
 
 
-                if (tb.SelectionStart >=0 && tb.SelectionLength > 0)
+                if (tb.SelectionStart >= 0 && tb.SelectionLength > 0)
                 {
                     try
                     {
@@ -256,7 +255,7 @@ namespace FASTBuildMonitorVSIX
                         int endLineIndex = tb.Text.IndexOf(Environment.NewLine, tb.SelectionStart);
 
                         string selectedLineText = tb.Text.Substring(startLineIndex, endLineIndex - startLineIndex);
-                        Console.WriteLine("SelectedLine {0}", selectedLineText);
+                        //Console.WriteLine("SelectedLine {0}", selectedLineText);
 
                         int startParenthesisIndex = selectedLineText.IndexOf('(');
                         int endParenthesisIndex = selectedLineText.IndexOf(')');
@@ -264,17 +263,17 @@ namespace FASTBuildMonitorVSIX
                         if (startParenthesisIndex > 0 && endParenthesisIndex > 0)
                         {
                             string filePath = selectedLineText.Substring(0, startParenthesisIndex);
-                            string lineString = selectedLineText.Substring(startParenthesisIndex+1, endParenthesisIndex - startParenthesisIndex -1);
+                            string lineString = selectedLineText.Substring(startParenthesisIndex + 1, endParenthesisIndex - startParenthesisIndex - 1);
 
                             Int32 lineNumber = Int32.Parse(lineString);
 
-                            Console.WriteLine("File({0}) Line({1})", filePath, lineNumber);
+                            //Console.WriteLine("File({0}) Line({1})", filePath, lineNumber);
 
                             Microsoft.VisualStudio.Shell.VsShellUtilities.OpenDocument(FASTBuildMonitorVSIX.FASTBuildMonitorPackage._instance, filePath);
 
                             DTE2 _dte = (DTE2)FASTBuildMonitorPackage._instance._dte;
 
-                            Console.WriteLine("Window: {0}",_dte.ActiveWindow.Caption);
+                            //Console.WriteLine("Window: {0}", _dte.ActiveWindow.Caption);
 
                             EnvDTE.TextSelection sel = _dte.ActiveDocument.Selection as EnvDTE.TextSelection;
 
@@ -288,17 +287,17 @@ namespace FASTBuildMonitorVSIX
                             }
                             catch (System.Exception ex)
                             {
-
-                                Console.WriteLine("Exception!");
+                                Console.WriteLine("Exception! " + ex.ToString());
                             }
 
                         }
                     }
                     catch (System.Exception ex)
                     {
+                        Console.WriteLine("Exception! " + ex.ToString());
                     }
                 }
-           }
+            }
         }
 
         /* Output Window Filtering & Combo box management */
@@ -319,11 +318,11 @@ namespace FASTBuildMonitorVSIX
 
             public BuildEvent _buildEvent
             {
-                get { return _internalBuildEvent;  }
+                get { return _internalBuildEvent; }
 
                 private set { _internalBuildEvent = value; }
             }
-            
+
             public string _internalName = "";
             public string _name
             {
@@ -345,7 +344,7 @@ namespace FASTBuildMonitorVSIX
 
                     if (result.Length > charactersToDisplay)
                     {
-                        result = result.Substring(result.IndexOf('\\',result.Length - charactersToDisplay));
+                        result = result.Substring(result.IndexOf('\\', result.Length - charactersToDisplay));
                     }
 
                     return result;
@@ -358,7 +357,7 @@ namespace FASTBuildMonitorVSIX
             }
         }
 
-        static public ObservableCollection<OutputFilterItem> _outputComboBoxFilters;        
+        static public ObservableCollection<OutputFilterItem> _outputComboBoxFilters;
 
         void ResetOutputWindowCombox()
         {
@@ -461,11 +460,11 @@ namespace FASTBuildMonitorVSIX
         {
             Image image = new Image();
             image.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.TimeLineTabIcon);
-            image.Margin = new Thickness(5, 5, 5, 5); 
+            image.Margin = new Thickness(5, 5, 5, 5);
             image.Width = 20.0f;
             image.Height = 20.0f;
             image.ToolTip = new ToolTip();
-            ((ToolTip)image.ToolTip).Content = "View Events TimeLine";
+            ((ToolTip)image.ToolTip).Content = "Events TimeLine";
             TabItemTimeBar.Header = image;
 
             image = new Image();
@@ -474,8 +473,17 @@ namespace FASTBuildMonitorVSIX
             image.Width = 20.0f;
             image.Height = 20.0f;
             image.ToolTip = new ToolTip();
-            ((ToolTip)image.ToolTip).Content = "View Output Window";
+            ((ToolTip)image.ToolTip).Content = "Output Window";
             TabItemOutput.Header = image;
+
+            image = new Image();
+            image.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.SettingsTabIcon);
+            image.Margin = new Thickness(5, 5, 5, 5);
+            image.Width = 20.0f;
+            image.Height = 20.0f;
+            image.ToolTip = new ToolTip();
+            ((ToolTip)image.ToolTip).Content = "Settings";
+            TabItemSettings.Header = image;
         }
 
         static public bool _outputTextBoxPendingLayoutUpdate = false;
@@ -514,9 +522,9 @@ namespace FASTBuildMonitorVSIX
 
                     if (result != null)
                     {
-                        Console.WriteLine("\n\nHost: " + result._host._name);
-                        Console.WriteLine("core: " + result._core._coreIndex);
-                        Console.WriteLine("event name: " + result._event._name);
+                        //Console.WriteLine("\n\nHost: " + result._host._name);
+                        //Console.WriteLine("core: " + result._core._coreIndex);
+                        //Console.WriteLine("event name: " + result._event._name);
 
                         string filename = result._event._name.Substring(1, result._event._name.Length - 2);
 
@@ -572,7 +580,7 @@ namespace FASTBuildMonitorVSIX
 
                     e.Handled = true;
                 }
-            }            
+            }
         }
 
         private void StartPanning()
@@ -615,6 +623,7 @@ namespace FASTBuildMonitorVSIX
 
                     EventsScrollViewer.ScrollToHorizontalOffset(newHorizontaOffset);
                     TimeBarScrollViewer.ScrollToHorizontalOffset(newHorizontaOffset);
+                    SystemGraphsScrollViewer.ScrollToHorizontalOffset(newHorizontaOffset);
 
                     EventsScrollViewer.ScrollToVerticalOffset(newVerticalOffset);
                     CoresScrollViewer.ScrollToVerticalOffset(newVerticalOffset);
@@ -648,6 +657,8 @@ namespace FASTBuildMonitorVSIX
                 EventsScrollViewer.ScrollToHorizontalOffset(EventsScrollViewer.ExtentWidth);
 
                 TimeBarScrollViewer.ScrollToHorizontalOffset(EventsScrollViewer.ExtentWidth);
+
+                SystemGraphsScrollViewer.ScrollToHorizontalOffset(EventsScrollViewer.ExtentWidth);
             }
 
             if (e.VerticalChange != 0)
@@ -663,12 +674,14 @@ namespace FASTBuildMonitorVSIX
             {
                 _StaticWindow.TimeBarScrollViewer.ScrollToHorizontalOffset(EventsScrollViewer.HorizontalOffset);
 
+                _StaticWindow.SystemGraphsScrollViewer.ScrollToHorizontalOffset(EventsScrollViewer.HorizontalOffset);
+
                 UpdateViewport();
             }
         }
 
         /* Mouse Zoom handling */
-        static private double _zoomFactor = 1.0f;
+        static public double _zoomFactor = 1.0f;
         static private double _zoomFactorOld = 0.1f;
 
         void MainWindow_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -736,6 +749,7 @@ namespace FASTBuildMonitorVSIX
 
                 _StaticWindow.EventsScrollViewer.ScrollToHorizontalOffset(newHorizontalScrollOffset);
                 _StaticWindow.TimeBarScrollViewer.ScrollToHorizontalOffset(newHorizontalScrollOffset);
+                _StaticWindow.SystemGraphsScrollViewer.ScrollToHorizontalOffset(newHorizontalScrollOffset);
 
                 _zoomFactorOld = _zoomFactor;
             }
@@ -744,6 +758,7 @@ namespace FASTBuildMonitorVSIX
 
         /* Input File IO feature */
         private FileStream _fileStream = null;
+        private Int64 _fileStreamPosition = 0;
         private List<byte> _fileBuffer = new System.Collections.Generic.List<byte>();
 
         private bool CanRead()
@@ -751,23 +766,58 @@ namespace FASTBuildMonitorVSIX
             return _fileStream != null && _fileStream.CanRead;
         }
 
+        private bool HasFileContentChanged()
+        {
+            bool bFileChanged = false;
+
+            if (_fileStream.Length < _fileStreamPosition)
+            {
+                // detect if the current file has been overwritten with less data
+                bFileChanged = true;
+            }
+            else if (_fileBuffer.Count > 0)
+            {
+                // detect if the current file has been overwritten with different data
+
+                int numBytesToCompare = Math.Min(_fileBuffer.Count, 256);
+
+                byte[] buffer = new byte[numBytesToCompare];
+
+                _fileStream.Seek(0, SeekOrigin.Begin);
+
+                int numBytesRead = _fileStream.Read(buffer, 0, numBytesToCompare);
+                Debug.Assert(numBytesRead == numBytesToCompare, "Could not read the expected amount of data from the log file...!");
+
+                for (int i = 0; i < numBytesToCompare; ++i)
+                {
+                    if (buffer[i] != _fileBuffer[i])
+                    {
+                        bFileChanged = true;
+                        break;
+                    }
+                }
+            }
+
+            return bFileChanged;
+        }
+
         private bool BuildRestarted()
         {
-            return CanRead() && _fileStream.Position > _fileStream.Length;
+            return CanRead() && HasFileContentChanged();
         }
 
         private void ResetState()
         {
+            _fileStreamPosition = 0;
             _fileStream.Seek(0, SeekOrigin.Begin);
 
             _fileBuffer.Clear();
 
             _buildRunningState = eBuildRunningState.Ready;
             _buildStatus = eBuildStatus.AllClear;
-            StatusBarBuildStatusImage.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusOK);
 
-            _stopWatch.Restart();
-            _latestTimeStamp = 0;
+            _buildStartTimeMS = 0;
+            _latestTimeStampMS = 0;
 
             _hosts.Clear();
             _localHost = null;
@@ -792,8 +842,30 @@ namespace FASTBuildMonitorVSIX
 
             // Change back the tabcontrol to the TimeLine automatically
             _StaticWindow.MyTabControl.SelectedIndex = (int)eTABs.TAB_TimeLine;
-            
+
             ResetOutputWindowCombox();
+
+            // progress status
+            UpdateBuildProgress(0.0f);
+            StatusBarProgressBar.Foreground = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FF06B025"));
+
+            // reset to autoscrolling ON
+            _autoScrolling = true;
+
+            // reset our zoom levels
+            _zoomFactor = 1.0f;
+            _zoomFactorOld = 0.1f;
+
+            // target pid
+            _targetPID = 0;
+            _lastTargetPIDCheckTimeMS = 0;
+
+            // live build session state
+            _isLiveSession = false;
+
+            // graphs
+            SystemGraphsCanvas.Children.Clear();
+            _systemPerformanceGraphs = new SystemPerformanceGraphsCanvas(SystemGraphsCanvas);
         }
 
         /* Build State Management */
@@ -811,7 +883,7 @@ namespace FASTBuildMonitorVSIX
             {
                 case eBuildRunningState.Ready:
                     StatusBarBuildStatus.Text = "Ready";
-            	break;
+                    break;
                 case eBuildRunningState.Running:
                     StatusBarBuildStatus.Text = "Running";
                     break;
@@ -833,10 +905,6 @@ namespace FASTBuildMonitorVSIX
             }
 
             StatusBarDetails.Text = string.Format("{0} Agents - {1} Cores", _hosts.Count, numCores);
-
-
-            StatusBarBuildTime.Text = "Build Time: " + GetTimeFormattedString2(GetCurrentBuildTimeMS());
-
         }
 
         public enum eBuildStatus
@@ -858,7 +926,7 @@ namespace FASTBuildMonitorVSIX
                     break;
 
                 case BuildEventState.TIMEOUT:
-                case BuildEventState.SUCCEEDED_WITH_WARNINGS:
+                case BuildEventState.SUCCEEDED_COMPLETED_WITH_WARNINGS:
                     if ((int)_buildStatus < (int)eBuildStatus.HasWarnings)
                     {
                         newBuildStatus = eBuildStatus.HasWarnings;
@@ -871,10 +939,10 @@ namespace FASTBuildMonitorVSIX
                 switch (newBuildStatus)
                 {
                     case eBuildStatus.HasErrors:
-                        StatusBarBuildStatusImage.Source =  GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusErrors);
+                        StatusBarProgressBar.Foreground = Brushes.Red;
                         break;
                     case eBuildStatus.HasWarnings:
-                        StatusBarBuildStatusImage.Source = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.BuildStatusWarnings);
+                        StatusBarProgressBar.Foreground = Brushes.Yellow;
                         break;
                 }
 
@@ -882,24 +950,117 @@ namespace FASTBuildMonitorVSIX
             }
         }
 
-        /* Time management */
-        private static Stopwatch _stopWatch = new Stopwatch();
-        private static Int64 _latestTimeStamp = 0;
-        private static void SetTimeReference(Int64 timeStampMS)
+        static private float _currentProgressPCT = 0.0f;
+        ToolTip _statusBarProgressToolTip = new ToolTip();
+
+        public void UpdateBuildProgress(float progressPCT)
         {
-            _stopWatch.Restart();
-            _latestTimeStamp = timeStampMS;
+            _currentProgressPCT = progressPCT;
+
+            StatusBarBuildTime.Text = string.Format("Duration: {0}", GetTimeFormattedString2(GetCurrentBuildTimeMS()));
+
+            StatusBarProgressBar.Value = _currentProgressPCT;
+
+
+            StatusBarProgressBar.ToolTip = _statusBarProgressToolTip;
+
+            _statusBarProgressToolTip.Content = string.Format("{0:0.00}%", _currentProgressPCT);
+        }
+
+
+        /* Target Process ID monitoring */
+        private static int _targetPID = 0;
+
+        private static bool _isLiveSession = false;
+
+        private static bool IsTargetProcessRunning(int pid)
+        {
+            bool bIsRunning = false;
+
+            System.Diagnostics.Process[] processlist = System.Diagnostics.Process.GetProcesses();
+            foreach (System.Diagnostics.Process proc in processlist)
+            {
+                if (proc.Id == pid)
+                {
+                    bIsRunning = true;
+                    break;
+                }
+            }
+
+            return bIsRunning;
+        }
+
+        private static Int64 _lastTargetPIDCheckTimeMS = 0;
+        const Int64 cTargetPIDCheckPeriodMS = 1 * 1000;
+
+        private static bool PollIsTargetProcessRunning()
+        {
+            // assume the process is running
+            bool bIsRunning = true;
+
+            if (_targetPID != 0 && _buildRunningState == eBuildRunningState.Running)
+            {
+                Int64 currentTimeMS = GetCurrentSystemTimeMS();
+
+                if ((currentTimeMS - _lastTargetPIDCheckTimeMS) > cTargetPIDCheckPeriodMS)
+                {
+                    bIsRunning = IsTargetProcessRunning(_targetPID);
+
+                    _lastTargetPIDCheckTimeMS = currentTimeMS;
+                }
+            }
+
+            return bIsRunning;
+        }
+
+        /* Time management */
+        private static Int64 _buildStartTimeMS = 0;
+        private static Int64 _latestTimeStampMS = 0;
+
+        private static Int64 ConvertFileTimeToMS(Int64 fileTime)
+        {
+            // FileTime: Contains a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 (UTC).
+            return fileTime / (10 * 1000);
         }
 
         const double cTimeStepMS = 500.0f;
 
-        private static Int64 GetCurrentBuildTimeMS()
+        public static Int64 GetCurrentSystemTimeMS()
         {
-            Int64 totalTimeSteps = (Int64)Math.Truncate(_stopWatch.ElapsedMilliseconds / cTimeStepMS);
+            Int64 currentTimeMS = DateTime.Now.ToFileTime() / (10 * 1000);
 
-            return _latestTimeStamp + totalTimeSteps * (int)cTimeStepMS;
+            return currentTimeMS;
         }
 
+        public static Int64 GetCurrentBuildTimeMS(bool bUseTimeStep = false)
+        {
+            Int64 elapsedBuildTime = -_buildStartTimeMS;
+
+            if (_buildRunningState == eBuildRunningState.Running)
+            {
+                Int64 currentTimeMS = GetCurrentSystemTimeMS();
+
+                elapsedBuildTime += currentTimeMS;
+
+                if (bUseTimeStep)
+                {
+                    elapsedBuildTime = (Int64)(Math.Truncate(elapsedBuildTime / cTimeStepMS) * cTimeStepMS);
+                }
+            }
+            else
+            {
+                elapsedBuildTime += _latestTimeStampMS;
+            }
+
+            return elapsedBuildTime;
+        }
+
+        private static Int64 RegisterNewTimeStamp(Int64 fileTime)
+        {
+            _latestTimeStampMS = ConvertFileTimeToMS(fileTime);
+
+            return _latestTimeStampMS;
+        }
 
         public class CPUCore : Canvas
         {
@@ -1184,15 +1345,17 @@ namespace FASTBuildMonitorVSIX
             UNKOWN = 0,
             IN_PROGRESS,
             FAILED,
-            SUCCEEDED,
-            SUCCEEDED_WITH_WARNINGS,
+            SUCCEEDED_COMPLETED,
+            SUCCEEDED_COMPLETED_WITH_WARNINGS,
+            SUCCEEDED_CACHED,
+            SUCCEEDED_PREPROCESSED,
             TIMEOUT
         }
 
-        const double pix_space_between_events = 2;
-        const double pix_per_second = 20.0f;
-        const double pix_height = 20;
-        const double pix_LOD_Threshold = 2.0f;
+        public const double pix_space_between_events = 2;
+        public const double pix_per_second = 20.0f;
+        public const double pix_height = 20;
+        public const double pix_LOD_Threshold = 2.0f;
 
         const double toolTip_TimeThreshold = 1.0f; //in Seconds
 
@@ -1265,6 +1428,8 @@ namespace FASTBuildMonitorVSIX
             public static bool _sbInitialized = false;
             public static ImageBrush _sSuccessCodeBrush = new ImageBrush();
             public static ImageBrush _sSuccessNonCodeBrush = new ImageBrush();
+            public static ImageBrush _sSuccessPreprocessedBrush = new ImageBrush();
+            public static ImageBrush _sSuccessCachedBrush = new ImageBrush();
             public static ImageBrush _sFailedBrush = new ImageBrush();
             public static ImageBrush _sTimeoutBrush = new ImageBrush();
             public static ImageBrush _sRunningBrush = new ImageBrush();
@@ -1279,6 +1444,8 @@ namespace FASTBuildMonitorVSIX
             {
                 _sSuccessCodeBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Success_code);
                 _sSuccessNonCodeBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Success_noncode);
+                _sSuccessPreprocessedBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Success_preprocessed);
+                _sSuccessCachedBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Success_cached);
                 _sFailedBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Failed);
                 _sTimeoutBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Timeout);
                 _sRunningBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Running);
@@ -1325,16 +1492,17 @@ namespace FASTBuildMonitorVSIX
 
             public void Stop(Int64 timeFinished, BuildEventState jobResult)
             {
-                if (timeFinished > 0)
-                {
-                    _timeFinished = timeFinished;
-                }
-                else
-                {
-                    _timeFinished = GetCurrentBuildTimeMS();
-                }
+                _timeFinished = timeFinished;
 
                 double totalTimeSeconds = (_timeFinished - _timeStarted) / 1000.0f;
+
+                // uncomment to catch negative times
+                Debug.Assert(totalTimeSeconds >= 0.0f);
+
+                //if (totalTimeSeconds <=0.0f)
+                //{
+                //    totalTimeSeconds = 0.001f;
+                //}
 
                 _toolTipText = string.Format("{0}", _name.Replace("\"", "")) + "\nStatus: ";
 
@@ -1342,7 +1510,7 @@ namespace FASTBuildMonitorVSIX
 
                 switch (_state)
                 {
-                    case BuildEventState.SUCCEEDED:
+                    case BuildEventState.SUCCEEDED_COMPLETED:
                         if (_name.Contains(".cpp") || _name.Contains(".c"))
                         {
                             _brush = _sSuccessCodeBrush;
@@ -1352,6 +1520,19 @@ namespace FASTBuildMonitorVSIX
                             _brush = _sSuccessNonCodeBrush;
                         }
                         _toolTipText += "Success";
+
+                        break;
+                    case BuildEventState.SUCCEEDED_CACHED:
+                        _brush = _sSuccessCachedBrush;
+
+                        _toolTipText += "Success(Cached)";
+
+                        break;
+
+                    case BuildEventState.SUCCEEDED_PREPROCESSED:
+                        _brush = _sSuccessPreprocessedBrush;
+
+                        _toolTipText += "Success(Preprocess)";
 
                         break;
                     case BuildEventState.FAILED:
@@ -1374,10 +1555,12 @@ namespace FASTBuildMonitorVSIX
                 _toolTipText += "\nStart Time: " + GetTimeFormattedString(_timeStarted);
                 _toolTipText += "\nEnd Time: " + GetTimeFormattedString(_timeFinished);
 
-                if (null!= _outputMessages && _outputMessages.Length >0)
+                if (null != _outputMessages && _outputMessages.Length > 0)
                 {
+                    // show only an extract of the errors so we don't flood the visual
                     int textLength = Math.Min(_outputMessages.Length, 100);
-                    _toolTipText += _outputMessages.Substring(0, textLength);
+
+                    _toolTipText += "\n" + _outputMessages.Substring(0, textLength);
                     _toolTipText += "... [Double-Click on the event to see more details]";
 
                     _outputMessages = string.Format("[Output {0}]: {1}", _name.Replace("\"", ""), Environment.NewLine) + _outputMessages;
@@ -1415,7 +1598,7 @@ namespace FASTBuildMonitorVSIX
             {
                 bool bHandled = true;
 
-                if (_state != BuildEventState.IN_PROGRESS && _outputMessages!=null && _outputMessages.Length>0 )
+                if (_state != BuildEventState.IN_PROGRESS && _outputMessages != null && _outputMessages.Length > 0)
                 {
                     // Switch to the Output Window Tab item
                     _StaticWindow.MyTabControl.SelectedIndex = (int)eTABs.TAB_OUTPUT;
@@ -1452,7 +1635,7 @@ namespace FASTBuildMonitorVSIX
                 if (_state == BuildEventState.IN_PROGRESS)
                 {
                     // Event is in progress
-                    duration = GetCurrentBuildTimeMS() - _timeStarted;
+                    duration = (long)Math.Max(0.0f, GetCurrentBuildTimeMS(true) - _timeStarted);
 
                     Point textSize = ComputeTextSize(_fileName);
 
@@ -1585,9 +1768,12 @@ namespace FASTBuildMonitorVSIX
                         }
                         else
                         {
-                            if (_state == BuildEventState.FAILED)
+                            switch(_state)
                             {
-                                //colorBrush = Brushes.WhiteSmoke;
+                                case BuildEventState.SUCCEEDED_PREPROCESSED:
+                                //case BuildEventState.FAILED:
+                                    colorBrush = Brushes.PaleTurquoise;
+                                    break;
                             }
 
                             dc.DrawRectangle(new VisualBrush(), new Pen(Brushes.Gray, 1), _bordersRect);
@@ -1626,11 +1812,19 @@ namespace FASTBuildMonitorVSIX
 
             switch (eventString)
             {
+                case "FAILED":
                 case "ERROR":
                     output = BuildEventState.FAILED;
                     break;
                 case "SUCCESS":
-                    output = BuildEventState.SUCCEEDED;
+                case "SUCCESS_COMPLETE":
+                    output = BuildEventState.SUCCEEDED_COMPLETED;
+                    break;
+                case "SUCCESS_CACHED":
+                    output = BuildEventState.SUCCEEDED_CACHED;
+                    break;
+                case "SUCCESS_PREPROCESSED":
+                    output = BuildEventState.SUCCEEDED_PREPROCESSED;
                     break;
                 case "TIMEOUT":
                     output = BuildEventState.TIMEOUT;
@@ -1647,7 +1841,9 @@ namespace FASTBuildMonitorVSIX
             START_BUILD,
             STOP_BUILD,
             START_JOB,
-            FINISH_JOB
+            FINISH_JOB,
+            PROGRESS_STATUS,
+            GRAPH
         }
 
         private BuildEventCommand TranslateBuildEventCommand(string commandString)
@@ -1668,6 +1864,12 @@ namespace FASTBuildMonitorVSIX
                 case "FINISH_JOB":
                     output = BuildEventCommand.FINISH_JOB;
                     break;
+                case "PROGRESS_STATUS":
+                    output = BuildEventCommand.PROGRESS_STATUS;
+                    break;
+                case "GRAPH":
+                    output = BuildEventCommand.GRAPH;
+                    break;
             }
 
             return output;
@@ -1687,6 +1889,8 @@ namespace FASTBuildMonitorVSIX
             public const int TIME_STAMP = 0;
             public const int COMMAND_TYPE = 1;
 
+            public const int START_BUILD_PID = 2;
+
             public const int START_JOB_HOST_NAME = 2;
             public const int START_JOB_EVENT_NAME = 3;
 
@@ -1694,6 +1898,13 @@ namespace FASTBuildMonitorVSIX
             public const int FINISH_JOB_HOST_NAME = 3;
             public const int FINISH_JOB_EVENT_NAME = 4;
             public const int FINISH_JOB_OUTPUT_MESSAGES = 5;
+
+            public const int PROGRESS_STATUS_PROGRESS_PCT = 2;
+
+            public const int GRAPH_GROUP_NAME = 2;
+            public const int GRAPH_COUNTER_NAME = 3;
+            public const int GRAPH_COUNTER_UNIT_TAG = 4;
+            public const int GRAPH_COUNTER_VALUE = 5;
         }
 
 
@@ -1717,99 +1928,164 @@ namespace FASTBuildMonitorVSIX
                 }
                 catch (System.Exception ex)
                 {
+                    Console.WriteLine("Exception! " + ex.ToString());
                     // the log file does not exist, bail out...
                     return;
                 }
-             }
+            }
 
-            // The file has been emptied so we must reset ourselves
+            // The file has been emptied so we must reset our state and start over
             if (BuildRestarted())
             {
                 ResetState();
+
+                return;
             }
 
             // Read all the new data and append it to our _fileBuffer
-            int numBytesToRead = (int)(_fileStream.Length - _fileStream.Position);
-            byte[] buffer = new byte[numBytesToRead];
-            int numBytesRead = _fileStream.Read(buffer, 0, numBytesToRead);
-            Debug.Assert(numBytesRead == numBytesToRead, "Could not read the expected amount of data from the log file...!");
-            _fileBuffer.AddRange(buffer);
+            int numBytesToRead = (int)(_fileStream.Length - _fileStreamPosition);
 
-            //Scan the current buffer looking for the last line position
-            int newPayloadStart = _lastProcessedPosition;
-            int newPayLoadSize = -1;
-            for (int i = _fileBuffer.Count - 1; i > _lastProcessedPosition; --i)
+            if (numBytesToRead > 0)
             {
-                if (_fileBuffer[i] == '\n')
+                byte[] buffer = new byte[numBytesToRead];
+
+                _fileStream.Seek(_fileStreamPosition, SeekOrigin.Begin);
+
+                int numBytesRead = _fileStream.Read(buffer, 0, numBytesToRead);
+
+                Debug.Assert(numBytesRead == numBytesToRead, "Could not read the expected amount of data from the log file...!");
+
+                _fileStreamPosition += numBytesRead;
+
+                _fileBuffer.AddRange(buffer);
+
+                //Scan the current buffer looking for the last line position
+                int newPayloadStart = _lastProcessedPosition;
+                int newPayLoadSize = -1;
+                for (int i = _fileBuffer.Count - 1; i > _lastProcessedPosition; --i)
                 {
-                    newPayLoadSize = i - newPayloadStart;
-                    break;
-                }
-            }
-
-            if (newPayLoadSize > 0)
-            {
-                string newEventsRaw = System.Text.Encoding.Default.GetString(_fileBuffer.GetRange(_lastProcessedPosition, newPayLoadSize).ToArray());
-                string[] newEvents = newEventsRaw.Split(new char[] { '\n' });
-
-                foreach (string eventString in newEvents)
-                {
-                    string[] tokens = Regex.Matches(eventString, @"[\""].+?[\""]|[^ ]+")
-                                     .Cast<Match>()
-                                     .Select(m => m.Value)
-                                     .ToList().ToArray();
-
-                    // TODO More error handling...
-                    if (tokens.Length >= 2)
+                    if (_fileBuffer[i] == '\n')
                     {
-                        // let's get the command timestamp and update our internal time reference
-                        Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
-                        SetTimeReference(timeStamp);
-
-                        // parse the command
-                        string commandString = tokens[CommandArgumentIndex.COMMAND_TYPE];
-                        BuildEventCommand command = TranslateBuildEventCommand(commandString);
-
-                        switch (command)
-                        {
-                            case BuildEventCommand.START_BUILD:
-                                ExecuteCommandStartBuild(tokens);
-                                break;
-                            case BuildEventCommand.STOP_BUILD:
-                                ExecuteCommandStopBuild(tokens);
-                                break;
-                            case BuildEventCommand.START_JOB:
-                                ExecuteCommandStartJob(tokens);
-                                break;
-                            case BuildEventCommand.FINISH_JOB:
-                                ExecuteCommandFinishJob(tokens);
-                                break;
-                            default:
-                                // Skipping unknown commands
-                                break;
-                        }
+                        newPayLoadSize = i - newPayloadStart;
+                        break;
                     }
                 }
 
-                _lastProcessedPosition += newPayLoadSize;
+                if (newPayLoadSize > 0)
+                {
+                    string newEventsRaw = System.Text.Encoding.Default.GetString(_fileBuffer.GetRange(_lastProcessedPosition, newPayLoadSize).ToArray());
+                    string[] newEvents = newEventsRaw.Split(new char[] { '\n' });
+
+                    foreach (string eventString in newEvents)
+                    {
+                        string[] tokens = Regex.Matches(eventString, @"[\""].+?[\""]|[^ ]+")
+                                         .Cast<Match>()
+                                         .Select(m => m.Value)
+                                         .ToList().ToArray();
+
+                        // TODO More error handling...
+                        if (tokens.Length >= 2)
+                        {
+                            // let's get the command timestamp and update our internal time reference
+                            Int64 eventFileTime = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+                            Int64 eventLocalTimeMS = RegisterNewTimeStamp(eventFileTime);
+
+                            // parse the command
+                            string commandString = tokens[CommandArgumentIndex.COMMAND_TYPE];
+                            BuildEventCommand command = TranslateBuildEventCommand(commandString);
+
+                            switch (command)
+                            {
+                                case BuildEventCommand.START_BUILD:
+                                    if (_buildRunningState == eBuildRunningState.Ready)
+                                    {
+                                        ExecuteCommandStartBuild(tokens, eventLocalTimeMS);
+                                    }
+                                    break;
+                                case BuildEventCommand.STOP_BUILD:
+                                    if (_buildRunningState == eBuildRunningState.Running)
+                                    {
+                                        ExecuteCommandStopBuild(tokens, eventLocalTimeMS);
+                                    }
+                                    break;
+                                case BuildEventCommand.START_JOB:
+                                    if (_buildRunningState == eBuildRunningState.Running)
+                                    {
+                                        ExecuteCommandStartJob(tokens, eventLocalTimeMS);
+                                    }
+                                    break;
+                                case BuildEventCommand.FINISH_JOB:
+                                    if (_buildRunningState == eBuildRunningState.Running)
+                                    {
+                                        ExecuteCommandFinishJob(tokens, eventLocalTimeMS);
+                                    }
+                                    break;
+                                case BuildEventCommand.PROGRESS_STATUS:
+                                    if (_buildRunningState == eBuildRunningState.Running)
+                                    {
+                                        ExecuteCommandProgressStatus(tokens);
+                                    }
+                                    break;
+                                case BuildEventCommand.GRAPH:
+                                    if (_buildRunningState == eBuildRunningState.Running)
+                                    {
+                                        ExecuteCommandGraph(tokens, eventLocalTimeMS);
+                                    }
+                                    break;
+
+
+                                default:
+                                    // Skipping unknown commands
+                                    break;
+                            }
+                        }
+                    }
+
+                    _lastProcessedPosition += newPayLoadSize;
+                }
+            }
+            else if (_buildRunningState == eBuildRunningState.Running && PollIsTargetProcessRunning() == false)
+            {
+                _latestTimeStampMS = GetCurrentSystemTimeMS();
+
+                ExecuteCommandStopBuild(null, _latestTimeStampMS);
             }
         }
 
         // Commands handling
-        private void ExecuteCommandStartBuild(string[] tokens)
+        private void ExecuteCommandStartBuild(string[] tokens, Int64 eventLocalTimeMS)
         {
+            int targetPID = int.Parse(tokens[CommandArgumentIndex.START_BUILD_PID]);
+
+            // remember our valid targetPID
+            _targetPID = targetPID;
+
+            // determine if we are in a live session (target PID is running when we receive a start build command)
+            _isLiveSession = IsTargetProcessRunning(_targetPID);
+
+            _systemPerformanceGraphs.OpenSession(_isLiveSession, _targetPID);
+
+            // Record the start time
+            _buildStartTimeMS = eventLocalTimeMS;
+
             _buildRunningState = eBuildRunningState.Running;
 
-            HeartBeat.StartAnimation();
+            // start the gif "building" animation
+            StatusBarRunningGif.StartAnimation();
 
             ToolTip newToolTip = new ToolTip();
+            StatusBarRunningGif.ToolTip = newToolTip;
             newToolTip.Content = "Build in Progress...";
-            HeartBeat.ToolTip = newToolTip;
         }
 
-        private void ExecuteCommandStopBuild(string[] tokens)
+        private void ExecuteCommandStopBuild(string[] tokens, Int64 eventLocalTimeMS)
         {
-            Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+            Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
+
+            if (_bPreparingBuildsteps)
+            {
+                _localHost.OnCompleteEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.SUCCEEDED_COMPLETED, "");
+            }
 
             // Stop all the active events currently running
             foreach (DictionaryEntry entry in _hosts)
@@ -1817,31 +2093,38 @@ namespace FASTBuildMonitorVSIX
                 BuildHost host = entry.Value as BuildHost;
                 foreach (CPUCore core in host._cores)
                 {
-                    core.UnScheduleEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.FAILED, "", true);
+                    core.UnScheduleEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.TIMEOUT, "", true);
                 }
             }
-
-            // Stop the live chrono and reset it
-            _stopWatch.Reset();
 
             _bPreparingBuildsteps = false;
 
             _buildRunningState = eBuildRunningState.Ready;
-            
-            HeartBeat.StopAnimation();
 
-            HeartBeat.ToolTip = null;
+            StatusBarRunningGif.StopAnimation();
+            StatusBarRunningGif.ToolTip = null;
+
+            UpdateBuildProgress(100.0f);
+
+
+            if (_isLiveSession)
+            {
+                _systemPerformanceGraphs.CloseSession();
+
+                _isLiveSession = false;
+            }
         }
 
-        private void ExecuteCommandStartJob(string[] tokens)
+        private void ExecuteCommandStartJob(string[] tokens, Int64 eventLocalTimeMS)
         {
-            Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+            Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
+
             string hostName = tokens[CommandArgumentIndex.START_JOB_HOST_NAME];
             string eventName = tokens[CommandArgumentIndex.START_JOB_EVENT_NAME];
 
             if (_bPreparingBuildsteps)
             {
-                _localHost.OnCompleteEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.SUCCEEDED, "");
+                _localHost.OnCompleteEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.SUCCEEDED_COMPLETED, "");
             }
 
             BuildEvent newEvent = new BuildEvent(eventName, timeStamp);
@@ -1861,9 +2144,10 @@ namespace FASTBuildMonitorVSIX
             host.OnStartEvent(newEvent);
         }
 
-        private void ExecuteCommandFinishJob(string[] tokens)
+        private void ExecuteCommandFinishJob(string[] tokens, Int64 eventLocalTimeMS)
         {
-            Int64 timeStamp = Int64.Parse(tokens[CommandArgumentIndex.TIME_STAMP]);
+            Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
+
             string jobResultString = tokens[CommandArgumentIndex.FINISH_JOB_RESULT];
             string hostName = tokens[CommandArgumentIndex.FINISH_JOB_HOST_NAME];
             string eventName = tokens[CommandArgumentIndex.FINISH_JOB_EVENT_NAME];
@@ -1877,15 +2161,35 @@ namespace FASTBuildMonitorVSIX
             }
 
             BuildEventState jobResult = TranslateBuildEventState(jobResultString);
-            
+
             foreach (DictionaryEntry entry in _hosts)
             {
                 BuildHost host = entry.Value as BuildHost;
                 host.OnCompleteEvent(timeStamp, eventName, jobResult, eventOutputMessages);
             }
 
-            // Update the build status after each job's result
             UpdateBuildStatus(jobResult);
+        }
+
+        private void ExecuteCommandProgressStatus(string[] tokens)
+        {
+            float progressPCT = float.Parse(tokens[CommandArgumentIndex.PROGRESS_STATUS_PROGRESS_PCT]);
+
+            // Update the build status after each job's result
+            UpdateBuildProgress(progressPCT);
+        }
+
+
+        private void ExecuteCommandGraph(string[] tokens, Int64 eventLocalTimeMS)
+        {
+            Int64 timeStamp = (eventLocalTimeMS - _buildStartTimeMS);
+
+            string groupName = tokens[CommandArgumentIndex.GRAPH_GROUP_NAME]; 
+            string counterName = tokens[CommandArgumentIndex.GRAPH_COUNTER_NAME].Substring(1, tokens[CommandArgumentIndex.GRAPH_COUNTER_NAME].Length - 2); // Remove the quotes at the start and end 
+            string counterUnitTag = tokens[CommandArgumentIndex.GRAPH_COUNTER_UNIT_TAG];
+            float value = float.Parse(tokens[CommandArgumentIndex.GRAPH_COUNTER_VALUE]);
+
+            _systemPerformanceGraphs.HandleLogEvent(timeStamp, groupName, counterName, counterUnitTag, value);
         }
 
         private static bool IsObjectVisible(Rect objectRect)
@@ -1966,7 +2270,7 @@ namespace FASTBuildMonitorVSIX
             return result;
         }
 
-        private static void DrawText(DrawingContext dc, string text, double x, double y, double maxWidth, bool bEnableDotDotDot, SolidColorBrush colorBrush)
+        public static void DrawText(DrawingContext dc, string text, double x, double y, double maxWidth, bool bEnableDotDotDot, SolidColorBrush colorBrush)
         {
             ushort[] glyphIndexes = null;
             double[] advanceWidths = null;
@@ -2100,6 +2404,8 @@ namespace FASTBuildMonitorVSIX
 
             _timeBar.RenderUpdate(10, 0, _zoomFactor);
 
+            _systemPerformanceGraphs.RenderUpdate(10, 0, _zoomFactor);
+
             double X = 10;
             double Y = 10;
 
@@ -2121,7 +2427,7 @@ namespace FASTBuildMonitorVSIX
 
             //Console.WriteLine("Scroll V Offset: (cores: {0} - events: {1})", CoresScrollViewer.ScrollableHeight, EventsScrollViewer.ScrollableHeight);
 
-            EventsCanvas.Width = TimeBarCanvas.Width = _maxX + _viewport.Width * 0.25f;
+            EventsCanvas.Width = TimeBarCanvas.Width = SystemGraphsCanvas.Width = _maxX + _viewport.Width * 0.25f;
             EventsCanvas.Height = CoresCanvas.Height = _maxY;
 
 #if ENABLE_RENDERING_STATS
@@ -2218,7 +2524,7 @@ namespace FASTBuildMonitorVSIX
                     Int64 numSteps = GetCurrentBuildTimeMS() / (_bigTimeUnit * 1000);
                     Int64 remainder = GetCurrentBuildTimeMS() % (_bigTimeUnit * 1000);
 
-                    numSteps += remainder > 0 ? 1 : 0;
+                    numSteps += remainder > 0 ? 2 : 1;
 
                     Int64 timeLimitMS = numSteps * _bigTimeUnit * 1000;
 
@@ -2227,7 +2533,7 @@ namespace FASTBuildMonitorVSIX
                         bool bDrawBigMarker = totalTimeMS % (_bigTimeUnit * 1000) == 0;
 
                         double x = X + zoomFactor * pix_per_second * totalTimeMS / 1000.0f;
-                        
+
                         //if (x >= _savedTimebarViewPort.X && x <= _savedTimebarViewPort.Y)
                         {
                             double height = bDrawBigMarker ? 5.0f : 2.0f;
@@ -2287,7 +2593,7 @@ namespace FASTBuildMonitorVSIX
                     newBigTimeUnit = 5;
                     newSmallTimeUnit = 1;
                 }
-                
+
                 Point newTimebarViewPort = new Point(_StaticWindow.EventsScrollViewer.HorizontalOffset, _StaticWindow.EventsScrollViewer.HorizontalOffset + _StaticWindow.EventsScrollViewer.ViewportWidth);
 
                 if (_zoomFactor != _savedZoomFactor || GetCurrentBuildTimeMS() != _savedBuildTime || newTimebarViewPort != _savedTimebarViewPort)
@@ -2347,14 +2653,23 @@ namespace FASTBuildMonitorVSIX
             Canvas _parentCanvas = null;
         }
 
+        SystemPerformanceGraphsCanvas _systemPerformanceGraphs;
 
         private void HandleTick(object sender, EventArgs e)
         {
-            ProcessInputFileStream();
+            //try
+            {
+                ProcessInputFileStream();
 
-            RenderUpdate();
+                RenderUpdate();
 
-            UpdateStatusBar();
+                UpdateStatusBar();
+            }
+            //catch (System.Exception ex)
+            //{
+            //    Console.WriteLine("Exception detected... Restarting! details: " + ex.ToString()) ;
+            //    ResetState();
+            //}
         }
     }
 }

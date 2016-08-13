@@ -63,6 +63,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Images.resx</DependentUpon>
     </Compile>
+    <Compile Include="SystemPerformanceGraphsCanvas.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
@@ -82,12 +83,16 @@
     <None Include="Resources\BuildStatusErrors.png" />
     <None Include="Resources\BuildStatusOK.png" />
     <None Include="Resources\BuildStatusWarnings.png" />
+    <None Include="Resources\box.gif" />
     <Content Include="Resources\FASTBuildMonitorCommand.png" />
     <Content Include="Resources\FASTBuildMonitorPackage.ico" />
     <None Include="Resources\LODBlock.png" />
     <None Include="Resources\Running.png" />
     <None Include="Resources\ProgressBar.gif" />
     <None Include="Resources\HeartBeat.gif" />
+    <None Include="Resources\Spinner.gif" />
+    <None Include="Resources\Success-cached.png" />
+    <None Include="Resources\SettingsTabIcon.png" />
     <Content Include="Resources\Success-code.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
@@ -98,6 +103,7 @@
     <None Include="Resources\Warning.png" />
     <None Include="Resources\TextOutputTabIcon.png" />
     <None Include="Resources\TimeLineTabIcon.png" />
+    <None Include="Resources\Success-preprocessed.png" />
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
@@ -214,6 +220,7 @@
     <EmbeddedResource Include="Resources\Images.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Images.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
