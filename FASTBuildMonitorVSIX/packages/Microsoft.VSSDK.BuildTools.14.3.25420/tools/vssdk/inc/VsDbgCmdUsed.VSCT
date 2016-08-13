@@ -46,7 +46,11 @@
     <!-- Make conditional for the items in this block -->
     <!-- #if !defined(No_AppPrelaunch) -->
     <UsedCommand Condition="!defined(No_AppPrelaunch)" guid="guidVSDebugCommand" id="cmdidAppPrelaunch"/>
-    <!-- #endif -->    
+    <!-- #endif -->
+    <!-- Make conditional for the items in this block -->
+    <!-- #if !defined(No_DebugForAccessibility) -->
+    <UsedCommand Condition="!defined(No_DebugForAccessibility)" guid="guidVSDebugCommand" id="cmdidDebugForAccessibility"/>
+    <!-- #endif -->
     <!--  -->
     <!-- Make conditional for the items in this block -->
     <!-- #if !defined(No_RestartDebugger) -->

@@ -1727,7 +1727,7 @@
     <CommandPlacement guid="guidVSStd14" id="cmdidShowQuickFixes" priority="0x0090">
       <Parent guid="guidSharedMenuGroup" id="IDG_VS_VIEW_OPTIONS"/>
     </CommandPlacement>
-    <CommandPlacement guid="guidVSStd14" id="cmdidShowQuickFixesForPosition" priority="0x0090">
+    <CommandPlacement guid="guidVSStd14" id="cmdidShowQuickFixesForPosition2" priority="0x0090">
         <Parent guid="guidSharedMenuGroup" id="IDG_VS_VIEW_OPTIONS"/>
     </CommandPlacement>
     <CommandPlacement guid="guidVSStd14" id="cmdidShowQuickFixesForPosition" priority="0x0070">
@@ -4524,6 +4524,7 @@
       while hitting Ctrl+. will always invoke cmdidShowQuickFixes (text editor scoped one) as more specific of them. -->
     <KeyBinding guid="guidVSStd14" id="cmdidShowQuickFixes" editor="GUID_TextEditorFactory" key1="VK_OEM_PERIOD" mod1="Control"/>
     <KeyBinding guid="guidVSStd14" id="cmdidShowQuickFixesForPosition" editor="guidVSStd97" key1="VK_OEM_PERIOD" mod1="Control"/>
+    <KeyBinding guid="guidVSStd14" id="cmdidShowQuickFixesForPosition2" editor="GUID_TextEditorFactory" key1="VK_OEM_5" mod1="Control" key2="VK_OEM_PERIOD" mod2="Control"/>
     <!-- -->
     <KeyBinding guid="guidVSStd14" id="cmdidSmartBreakLine" editor="guidVSStd97" key1="VK_RETURN" mod1="Shift"/>
   </KeyBindings>

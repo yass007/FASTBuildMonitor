@@ -1044,6 +1044,9 @@
     <CommandPlacement guid="guidVSDebugCommand" id="cmdidAppPrelaunch" priority="0x500">
       <Parent guid="guidVSDebugGroup" id="IDG_OTHER_DEBUG_TARGETS_SUBMENU"/>
     </CommandPlacement>
+    <CommandPlacement guid="guidVSDebugCommand" id="cmdidDebugForAccessibility" priority="0x700">
+      <Parent guid="guidVSDebugGroup" id="IDG_OTHER_DEBUG_TARGETS_SUBMENU"/>
+    </CommandPlacement>
     <!--  -->
     <CommandPlacement guid="guidVSStd97" id="cmdidStart" priority="0x0100">
       <Parent guid="guidVSDebugGroup" id="IDG_DEBUG_TOOLBAR_EXECUTION"/>
@@ -2246,7 +2249,7 @@
     <KeyBinding guid="guidVSDebugCommand" id="cmdidBreakpointsWindowGoToDisassembly" editor="guidVSStd97" key1="VK_F9" mod1="Alt" key2="A"/>
     <KeyBinding guid="guidVSDebugCommand" id="cmdidBreakpointEditLabels" editor="guidVSStd97" key1="VK_F9" mod1="Alt" key2="L"/>
     <KeyBinding guid="guidVSDebugCommand" id="cmdidBreakpointSettingsCondition" editor="guidVSStd97" key1="VK_F9" mod1="Alt" key2="C"/>
-    <KeyBinding guid="guidVSDebugCommand" id="cmdidNewFunctionBreakpoint" editor="guidVSStd97" key1="VK_F9" mod1="Alt" key2="B"/>
+    <KeyBinding guid="guidVSDebugCommand" id="cmdidNewFunctionBreakpoint" editor="guidVSStd97" key1="B" mod1="Control"/>
     <!--  -->
     <!--     // debug location toolbar -->
     <KeyBinding guid="guidVSDebugCommand" id="cmdidProcessList" editor="guidVSStd97" key1="5" mod1="Control"/>

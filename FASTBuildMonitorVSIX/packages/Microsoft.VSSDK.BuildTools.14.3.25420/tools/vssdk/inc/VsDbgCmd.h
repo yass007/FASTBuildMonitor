@@ -678,7 +678,8 @@ inline long DBGCMDID_TOOLWINDOW_ID(DWORD cmdid)
 #define cmdidThreadIpMarkersUnflag                  0x0000d000
 #define cmdidThreadIpMarkersUnflagFirst             0x0000d001
 #define cmdidThreadIpMarkersUnflagLast              0x0000dfff
-#define cmdidAppPrelaunch				            0x00000219
+#define cmdidAppPrelaunch                           0x00000219
+#define cmdidDebugForAccessibility                  0x00000220
 
 
 // Command Window commands

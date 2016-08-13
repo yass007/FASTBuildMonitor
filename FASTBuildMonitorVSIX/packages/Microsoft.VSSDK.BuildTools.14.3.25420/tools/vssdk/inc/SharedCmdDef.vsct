@@ -10539,7 +10539,7 @@
         <CommandFlag>IconAndText</CommandFlag>
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Quick Actions...</ButtonText>
+          <ButtonText>Quick Actions and Refactorings...</ButtonText>
           <CommandName>Quick Actions</CommandName>
           <CanonicalName>QuickActions</CanonicalName>
           <LocCanonicalName>QuickActions</LocCanonicalName>
@@ -10554,7 +10554,22 @@
         <CommandFlag>IconAndText</CommandFlag>
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
-          <ButtonText>Quick Actions...</ButtonText>
+          <ButtonText>Quick Actions and Refactorings...</ButtonText>
+          <CommandName>Quick Actions For Position</CommandName>
+          <CanonicalName>Quick Actions For Position</CanonicalName>
+          <LocCanonicalName>Quick Actions For Position</LocCanonicalName>
+        </Strings>
+      </Button>
+    <Button guid="guidVSStd14" id="cmdidShowQuickFixesForPosition2" priority="0x0000" type="Button">
+        <Icon guid="ImageCatalogGuid" id="IntellisenseLightBulb" />
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DefaultDisabled</CommandFlag>
+        <CommandFlag>CommandWellOnly</CommandFlag>
+        <CommandFlag>IconAndText</CommandFlag>
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Quick Actions and Refactorings...</ButtonText>
           <CommandName>Quick Actions For Position</CommandName>
           <CanonicalName>Quick Actions For Position</CanonicalName>
           <LocCanonicalName>Quick Actions For Position</LocCanonicalName>

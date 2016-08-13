@@ -2819,6 +2819,7 @@ enum
 #define cmdidManageLayouts              4
 #define cmdidSaveLayout                 5
 #define cmdidShowQuickFixesForPosition  6
+#define cmdidShowQuickFixesForPosition2 7
 
 // Delete toolbar button commands for Find Results (FR) 1 & 2 tool windows
 #define cmdidDeleteFR1             10

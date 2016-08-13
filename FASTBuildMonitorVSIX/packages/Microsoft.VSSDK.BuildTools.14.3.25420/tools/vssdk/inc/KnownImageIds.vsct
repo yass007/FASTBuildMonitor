@@ -1029,6 +1029,7 @@
       <IDSymbol name="DIVTag" value="996" />
       <IDSymbol name="DMAChannel" value="997" />
       <IDSymbol name="Dock" value="998" />
+      <IDSymbol name="Docker" value="3689" />
       <IDSymbol name="DockPanel" value="999" />
       <IDSymbol name="DockTo" value="1000" />
       <IDSymbol name="Document" value="1001" />
@@ -1059,6 +1060,7 @@
       <IDSymbol name="DownloadDocument" value="1026" />
       <IDSymbol name="DownloadFolder" value="1027" />
       <IDSymbol name="DownloadLog" value="1028" />
+      <IDSymbol name="DownloadNoColor" value="3685" />
       <IDSymbol name="DownloadWebSettings" value="1029" />
       <IDSymbol name="DragDropControl" value="1030" />
       <IDSymbol name="DragDropGroupControl" value="1031" />
@@ -1386,6 +1388,7 @@
       <IDSymbol name="FSConsoleTest" value="1347" />
       <IDSymbol name="FSFileNode" value="1348" />
       <IDSymbol name="FSHelpApplication" value="1349" />
+      <IDSymbol name="FSInteractiveWindow" value="3683" />
       <IDSymbol name="FSInterfaceCollection" value="1350" />
       <IDSymbol name="FSProjectNode" value="1351" />
       <IDSymbol name="FSScript" value="1352" />
@@ -1679,6 +1682,7 @@
       <IDSymbol name="JSFixedLayoutApplication" value="1638" />
       <IDSymbol name="JSGridApplication" value="1639" />
       <IDSymbol name="JSHubApplication" value="1640" />
+      <IDSymbol name="JSInteractiveWindow" value="3684" />
       <IDSymbol name="JSNavigationApplication" value="1641" />
       <IDSymbol name="JSONScript" value="1642" />
       <IDSymbol name="JSPhone" value="1643" />
@@ -2298,6 +2302,7 @@
       <IDSymbol name="ParagraphHardReturn" value="2237" />
       <IDSymbol name="Parallel" value="2238" />
       <IDSymbol name="ParallelCallStack" value="2239" />
+      <IDSymbol name="ParallelExecution" value="3690" />
       <IDSymbol name="ParallelForEach" value="2240" />
       <IDSymbol name="ParallelPort" value="2241" />
       <IDSymbol name="Parameter" value="2242" />
@@ -2450,6 +2455,7 @@
       <IDSymbol name="PotsModem" value="2381" />
       <IDSymbol name="Power" value="2382" />
       <IDSymbol name="PowershellFile" value="2383" />
+      <IDSymbol name="PowershellInteractiveWindow" value="3687" />
       <IDSymbol name="PowerSupply" value="2384" />
       <IDSymbol name="PrecedenceConstraint" value="2385" />
       <IDSymbol name="PredictFunction" value="2386" />
@@ -3383,6 +3389,7 @@
       <IDSymbol name="Upload" value="3291" />
       <IDSymbol name="UploadDatabase" value="3292" />
       <IDSymbol name="UploadDocument" value="3293" />
+      <IDSymbol name="UploadNoColor" value="3688" />
       <IDSymbol name="UploadParameter" value="3294" />
       <IDSymbol name="URLInputBox" value="3295" />
       <IDSymbol name="UsageBasedOptimization" value="3296" />
@@ -3454,6 +3461,7 @@
       <IDSymbol name="VBFixedLayoutApplication" value="3362" />
       <IDSymbol name="VBGridApplication" value="3363" />
       <IDSymbol name="VBHubApplication" value="3364" />
+      <IDSymbol name="VBInteractiveWindow" value="3686" />
       <IDSymbol name="VBInterfaceCollection" value="3365" />
       <IDSymbol name="VBInterop" value="3366" />
       <IDSymbol name="VBLibrary" value="3367" />

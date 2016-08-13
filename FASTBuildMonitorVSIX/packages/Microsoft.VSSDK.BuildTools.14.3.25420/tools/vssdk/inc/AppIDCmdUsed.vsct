@@ -880,6 +880,7 @@
         <UsedCommand guid="guidVSStd12" id="cmdidMoveSelLinesDown" />
         <UsedCommand guid="guidVSStd14" id="cmdidShowQuickFixes"/>
         <UsedCommand guid="guidVSStd14" id="cmdidShowQuickFixesForPosition"/>
+        <UsedCommand guid="guidVSStd14" id="cmdidShowQuickFixesForPosition2"/>
         <UsedCommand guid="guidVSStd14" id="cmdidSmartBreakLine"/>
 
         <UsedCommands Condition="!Defined(No_ShellPkg_SnippetCommands)">
