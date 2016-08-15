@@ -1,4 +1,4 @@
-# FASTBuildMonitor
+# FASTBuild Monitor
 A graphical Visualizer for FASTBuild (Supports VS 2012, 2013, 2015).
 
 Instructions (Work in progress):
