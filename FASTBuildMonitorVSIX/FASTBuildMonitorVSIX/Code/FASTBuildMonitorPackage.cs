@@ -1,12 +1,12 @@
 ﻿//------------------------------------------------------------------------------
-// <copyright file="FASTBuildMonitorPackage.cs" company="Company">
-//     Copyright (c) Company.  All rights reserved.
-// </copyright>
+// Copyright 2016 Yassine Riahi and Liam Flookes. 
+// Provided under a MIT License, see license file on github.
 //------------------------------------------------------------------------------
 
 using System;
 using System.ComponentModel.Design;
 using System.Diagnostics;
+using Microsoft.VisualStudio.ExtensionManager;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -147,19 +147,42 @@ namespace FASTBuildMonitorVSIX
             }
         }
 
-        //foreach (Window window in _dte.Windows)
-        //{
-        //    if (window.Caption == "Output")
-        //    {
-        //        Console.WriteLine("window: {0}", window.Caption);
+        public class VSIXPackageInformation
+        {
+            public Version _version = null;
+            public string _packageName;
+            public string _moreInfoURL;
+            public string _authors;
+        }
 
-        //        TextSelection sel = window.Document.Selection as TextSelection;
+        public VSIXPackageInformation GetCurrentVSIXPackageInformation()
+        {
+            VSIXPackageInformation outInfo = null;
 
-        //        sel.GotoLine(1);
+            try
+            {
+                outInfo = new VSIXPackageInformation();
 
-        //        sel.ActivePoint.TryToShow(vsPaneShowHow.vsPaneShowCentered, null);
-        //    }
-        //}
+                // get ExtensionManager
+                IVsExtensionManager manager = GetService(typeof(SVsExtensionManager)) as IVsExtensionManager;
+                // get your extension by Product Id
+                IInstalledExtension myExtension = manager.GetInstalledExtension("FASTBuildMonitorVSIX.44bf85a5-7635-4a2e-86d7-7b7f3bf757a8");
+                // get current version
+                outInfo._version = myExtension.Header.Version;
+                outInfo._authors = myExtension.Header.Author;
+                outInfo._packageName = myExtension.Header.Name;
+                outInfo._moreInfoURL = myExtension.Header.MoreInfoUrl.OriginalString;
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine("Exception: " + ex.ToString());
+            }
+
+            return outInfo;
+        }
+
+
+
     }
 
     #endregion

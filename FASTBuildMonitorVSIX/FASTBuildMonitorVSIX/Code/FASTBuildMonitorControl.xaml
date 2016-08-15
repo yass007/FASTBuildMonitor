@@ -100,14 +100,37 @@
                 </TabItem.Header>
                 <Grid Margin="0,0,0,0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" MinHeight="77"/>
+                        <RowDefinition Height="Auto" MinHeight="102"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <GroupBox x:Name="SettingsGroupBox" Header="Settings" HorizontalAlignment="Left" Margin="10,14,0,0" Grid.Row="1" VerticalAlignment="Top" Height="85" Width="165">
+                    <GroupBox x:Name="SettingsGroupBox" Header="Settings" HorizontalAlignment="Left" Margin="26,0,0,0" VerticalAlignment="Top" Height="92" Width="165">
                         <CheckBox x:Name="SettingsGraphsCheckBox" Content="Show System Graphs" HorizontalAlignment="Left" Margin="10,22,0,0" VerticalAlignment="Top" Checked="checkBox_Checked" Unchecked="checkBox_Unchecked"/>
                     </GroupBox>
-                    <GroupBox x:Name="AboutGroupBox" Header="About" HorizontalAlignment="Left" Margin="10,6,0,10" Width="165">
-                        <TextBlock x:Name="AboutTextBlock" Height="31" TextWrapping="Wrap" Margin="5,2,3,0" VerticalAlignment="Top"/>
+                    <GroupBox x:Name="AboutGroupBox" Header="About" Margin="26,10,397,0" Height ="Auto"  Grid.Row="1" VerticalAlignment="Top">
+                        <Grid >
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>                                
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <TextBlock x:Name="AboutTextBlock" Height="auto" TextWrapping="Wrap" Margin="5,2,3,0" VerticalAlignment="Top" Grid.Row="0"/>
+                            <StackPanel Orientation =" Horizontal" Grid.Row="1">
+                                <TextBlock  Text="More Info:"  Height="auto" TextWrapping="Wrap" Margin="5,2,3,0" VerticalAlignment="Top"/>
+                                <TextBlock x:Name="AboutLinksTextBlock1" Height="auto" TextWrapping="Wrap" Margin="5,2,3,0" VerticalAlignment="Top">
+                                    <Hyperlink NavigateUri="http://www.KnownShippable.com" RequestNavigate="Hyperlink_RequestNavigate">
+                                        http://www.knownshippable.com
+                                    </Hyperlink>
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel Orientation = "Horizontal" Grid.Row="2">
+                                <TextBlock  Text="GitHub:"  Height="auto" TextWrapping="Wrap" Margin="5,2,3,0" VerticalAlignment="Top" />                                
+                                <TextBlock x:Name="AboutLinksTextBlock2" Height="auto" TextWrapping="Wrap" Margin="5,2,3,0" VerticalAlignment="Top">
+                                        <Hyperlink NavigateUri="https://github.com/yass007/FASTBuildMonitor" RequestNavigate="Hyperlink_RequestNavigate">
+                                            https://github.com/yass007/FASTBuildMonitor
+                                        </Hyperlink>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
                     </GroupBox>
                 </Grid>
             </TabItem>

@@ -1,7 +1,6 @@
 ﻿//------------------------------------------------------------------------------
-// <copyright file="FASTBuildMonitorCommand.cs" company="Company">
-//     Copyright (c) Company.  All rights reserved.
-// </copyright>
+// Copyright 2016 Yassine Riahi and Liam Flookes. 
+// Provided under a MIT License, see license file on github.
 //------------------------------------------------------------------------------
 
 using System;

@@ -1,4 +1,9 @@
-﻿using System;
+﻿//------------------------------------------------------------------------------
+// Copyright 2016 Yassine Riahi and Liam Flookes. 
+// Provided under a MIT License, see license file on github.
+//------------------------------------------------------------------------------
+
+using System;
 using System.Windows;
 using System.Windows.Media;
 

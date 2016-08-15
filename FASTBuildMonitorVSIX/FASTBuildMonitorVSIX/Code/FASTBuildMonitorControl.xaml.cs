@@ -1,6 +1,12 @@
-﻿//#define ENABLE_RENDERING_STATS
+﻿//------------------------------------------------------------------------------
+// Copyright 2016 Yassine Riahi and Liam Flookes. 
+// Provided under a MIT License, see license file on github.
+//------------------------------------------------------------------------------
+
+//#define ENABLE_RENDERING_STATS
 
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -371,6 +377,30 @@ namespace FASTBuildMonitorVSIX
             image.ToolTip = new ToolTip();
             ((ToolTip)image.ToolTip).Content = "Settings";
             TabItemSettings.Header = image;
+
+
+            string versionText = "v?";
+            string authorsText = "Yassine Riahi & Liam Flookes";
+            string packageNameText = "FASTBuildMonitorVSIX";
+
+            // Find out the VSIX info
+            FASTBuildMonitorPackage.VSIXPackageInformation packageInfo = FASTBuildMonitorPackage._instance != null ? FASTBuildMonitorPackage._instance.GetCurrentVSIXPackageInformation() : null;
+
+            if (packageInfo != null)
+            {
+                versionText = packageInfo._version.ToString();
+                authorsText = packageInfo._authors;
+                packageNameText = packageInfo._packageName;
+            }
+
+            AboutTextBlock.Text = string.Format("{0} v{1}\nCopyright (c) 2016 {2}.\nProvided under a MIT License, see license file on github.", packageNameText, versionText, authorsText);
+        }
+
+
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            System.Diagnostics.Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+            e.Handled = true;
         }
 
         static public bool _outputTextBoxPendingLayoutUpdate = false;
