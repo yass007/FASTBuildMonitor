@@ -100,13 +100,15 @@
                 </TabItem.Header>
                 <Grid Margin="0,0,0,0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" MinHeight="77"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <GroupBox x:Name="SettingsGroupBox" Header="Settings" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="1" VerticalAlignment="Top" Height="85" Width="165">
+                    <GroupBox x:Name="SettingsGroupBox" Header="Settings" HorizontalAlignment="Left" Margin="10,14,0,0" Grid.Row="1" VerticalAlignment="Top" Height="85" Width="165">
                         <CheckBox x:Name="SettingsGraphsCheckBox" Content="Show System Graphs" HorizontalAlignment="Left" Margin="10,22,0,0" VerticalAlignment="Top" Checked="checkBox_Checked" Unchecked="checkBox_Unchecked"/>
                     </GroupBox>
-
+                    <GroupBox x:Name="AboutGroupBox" Header="About" HorizontalAlignment="Left" Margin="10,6,0,10" Width="165">
+                        <TextBlock x:Name="AboutTextBlock" Height="31" TextWrapping="Wrap" Margin="10,0,-2,0"/>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>

@@ -64,6 +64,7 @@
       <DependentUpon>Images.resx</DependentUpon>
     </Compile>
     <Compile Include="SystemPerformanceGraphsCanvas.cs" />
+    <Compile Include="Timebar.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
