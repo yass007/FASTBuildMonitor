@@ -62,7 +62,6 @@ namespace FASTBuildMonitorVSIX
                     Brushes.Chocolate,
                     Brushes.Yellow,
                     Brushes.Green,
-                    Brushes.DarkGray,
                     Brushes.Gray,
                     Brushes.Fuchsia,
                     Brushes.DarkGreen,
@@ -71,7 +70,9 @@ namespace FASTBuildMonitorVSIX
                     Brushes.Maroon,
                     Brushes.Salmon,
                     Brushes.DarkViolet,
-                    Brushes.Brown};
+                    Brushes.Brown,
+                    Brushes.DarkGray
+                };
 
                 public static int _sColorsIndex = 0;
 
@@ -277,7 +278,7 @@ namespace FASTBuildMonitorVSIX
                         }
                         catch (System.Exception ex)
                         {
-                            Console.WriteLine("Exception during perf counters sampling");
+                            Console.WriteLine("Exception during perf counters sampling" + ex.ToString());
                         }
                     }
 
@@ -565,7 +566,7 @@ namespace FASTBuildMonitorVSIX
 
                         if (_selectedGraphPoint != null)
                         {
-                            FASTBuildMonitorControl.DrawText(dc, string.Format("{0}: {1:0.00}{2}", _description, _selectedGraphPoint._value, _unitTag), SystemPerformanceGraphsCanvas._savedHorizontalViewport.X, _selectedGraphPoint._coordinates.Y, 200, false, Brushes.Black);
+                            TextUtils.DrawText(dc, string.Format("{0}: {1:0.00}{2}", _description, _selectedGraphPoint._value, _unitTag), SystemPerformanceGraphsCanvas._savedHorizontalViewport.X, _selectedGraphPoint._coordinates.Y, 200, false, Brushes.Black);
 
                             dc.DrawGeometry(Brushes.Gray, new Pen(Brushes.Gray, 1), _selectionLinesGeometry);
                         }

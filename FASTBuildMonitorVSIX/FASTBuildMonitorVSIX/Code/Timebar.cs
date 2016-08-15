@@ -26,7 +26,7 @@ namespace FASTBuildMonitorVSIX
         {
             dc.DrawGeometry(Brushes.Black, new Pen(Brushes.Black, 1), _geometry);
 
-            _textTags.ForEach(tag => FASTBuildMonitorControl.DrawText(dc, tag._text, tag._x, tag._y, 100, false, Brushes.Black));
+            _textTags.ForEach(tag => TextUtils.DrawText(dc, tag._text, tag._x, tag._y, 100, false, Brushes.Black));
         }
 
         void UpdateGeometry(double X, double Y, double zoomFactor)
@@ -55,6 +55,7 @@ namespace FASTBuildMonitorVSIX
 
                     double x = X + zoomFactor * FASTBuildMonitorControl.pix_per_second * totalTimeMS / 1000.0f;
 
+                    // TODO: activate culling optimization
                     //if (x >= _savedTimebarViewPort.X && x <= _savedTimebarViewPort.Y)
                     {
                         double height = bDrawBigMarker ? 5.0f : 2.0f;
@@ -68,7 +69,7 @@ namespace FASTBuildMonitorVSIX
                         {
                             string formattedText = FASTBuildMonitorControl.GetTimeFormattedString(totalTimeMS);
 
-                            Point textSize = FASTBuildMonitorControl.ComputeTextSize(formattedText);
+                            Point textSize = TextUtils.ComputeTextSize(formattedText);
 
                             double horizontalCorrection = textSize.X / 2.0f;
 
@@ -173,5 +174,4 @@ namespace FASTBuildMonitorVSIX
 
         Canvas _parentCanvas = null;
     }
-
 }

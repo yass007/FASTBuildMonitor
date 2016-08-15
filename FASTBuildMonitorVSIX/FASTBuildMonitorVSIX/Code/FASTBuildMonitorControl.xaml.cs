@@ -13,7 +13,6 @@ using System.Windows.Threading;
 using System.IO;
 using System.Diagnostics;
 using System.Collections;
-using System.Windows.Media.Animation;
 using System.Text.RegularExpressions;
 using System.Collections.ObjectModel;
 using EnvDTE;
@@ -21,107 +20,6 @@ using EnvDTE80;
 
 namespace FASTBuildMonitorVSIX
 {
-    class GifImage : Image
-    {
-        private bool _isInitialized;
-        private GifBitmapDecoder _gifDecoder;
-        private Int32Animation _animation;
-
-        public int FrameIndex
-        {
-            get { return (int)GetValue(FrameIndexProperty); }
-            set { SetValue(FrameIndexProperty, value); }
-        }
-
-        private void Initialize()
-        {
-            _gifDecoder = FASTBuildMonitorControl.GetGifBitmapDecoder(GifSource);
-            _animation = new Int32Animation(0, _gifDecoder.Frames.Count - 1, new Duration(new TimeSpan(0, 0, 0, _gifDecoder.Frames.Count / 10, (int)((_gifDecoder.Frames.Count / 10.0 - _gifDecoder.Frames.Count / 10) * 1000))));
-            _animation.RepeatBehavior = RepeatBehavior.Forever;
-            this.Source = _gifDecoder.Frames[0];
-
-            _isInitialized = true;
-        }
-
-        static GifImage()
-        {
-            VisibilityProperty.OverrideMetadata(typeof(GifImage),
-                new FrameworkPropertyMetadata(VisibilityPropertyChanged));
-        }
-
-        private static void VisibilityPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
-        {
-            if ((Visibility)e.NewValue == Visibility.Visible)
-            {
-                ((GifImage)sender).StartAnimation();
-            }
-            else
-            {
-                ((GifImage)sender).StopAnimation();
-            }
-        }
-
-        public static readonly DependencyProperty FrameIndexProperty =
-            DependencyProperty.Register("FrameIndex", typeof(int), typeof(GifImage), new UIPropertyMetadata(0, new PropertyChangedCallback(ChangingFrameIndex)));
-
-        static void ChangingFrameIndex(DependencyObject obj, DependencyPropertyChangedEventArgs ev)
-        {
-            var gifImage = obj as GifImage;
-            gifImage.Source = gifImage._gifDecoder.Frames[(int)ev.NewValue];
-        }
-
-        /// <summary>
-        /// Defines whether the animation starts on it's own
-        /// </summary>
-        public bool AutoStart
-        {
-            get { return (bool)GetValue(AutoStartProperty); }
-            set { SetValue(AutoStartProperty, value); }
-        }
-
-        public static readonly DependencyProperty AutoStartProperty =
-            DependencyProperty.Register("AutoStart", typeof(bool), typeof(GifImage), new UIPropertyMetadata(false, AutoStartPropertyChanged));
-
-        private static void AutoStartPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
-        {
-            if ((bool)e.NewValue)
-                (sender as GifImage).StartAnimation();
-        }
-
-        public string GifSource
-        {
-            get { return (string)GetValue(GifSourceProperty); }
-            set { SetValue(GifSourceProperty, value); }
-        }
-
-        public static readonly DependencyProperty GifSourceProperty =
-            DependencyProperty.Register("GifSource", typeof(string), typeof(GifImage), new UIPropertyMetadata(string.Empty, GifSourcePropertyChanged));
-
-        private static void GifSourcePropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
-        {
-            (sender as GifImage).Initialize();
-        }
-
-        /// <summary>
-        /// Starts the animation
-        /// </summary>
-        public void StartAnimation()
-        {
-            if (!_isInitialized)
-                this.Initialize();
-
-            BeginAnimation(FrameIndexProperty, _animation);
-        }
-
-        /// <summary>
-        /// Stops the animation
-        /// </summary>
-        public void StopAnimation()
-        {
-            BeginAnimation(FrameIndexProperty, null);
-        }
-    }
-
     /// <summary>
     /// Interaction logic for MyControl.xaml
     /// </summary>
@@ -149,19 +47,8 @@ namespace FASTBuildMonitorVSIX
 
         private void InitializeInternalState()
         {
-            // Font text
-            if (_glyphTypeface == null)
-            {
-                Typeface typeface = new Typeface(new FontFamily("Segoe UI"),
-                                                FontStyles.Normal,
-                                                FontWeights.Normal,
-                                                FontStretches.Normal);
-
-                if (!typeface.TryGetGlyphTypeface(out _glyphTypeface))
-                {
-                    throw new InvalidOperationException("No glyphtypeface found");
-                }
-            }
+            // Initialize text rendering
+            TextUtils.StaticInitialize();
 
             // Time bar display
             _timeBar = new TimeBar(TimeBarCanvas);
@@ -207,7 +94,6 @@ namespace FASTBuildMonitorVSIX
                 _timer.Start();
             }));
         }
-
 
         /* Settings Tab Check boxes */
         private void checkBox_Checked(object sender, RoutedEventArgs e)
@@ -1638,7 +1524,7 @@ namespace FASTBuildMonitorVSIX
                     // Event is in progress
                     duration = (long)Math.Max(0.0f, GetCurrentBuildTimeMS(true) - _timeStarted);
 
-                    Point textSize = ComputeTextSize(_fileName);
+                    Point textSize = TextUtils.ComputeTextSize(_fileName);
 
                     OriginalWidthInPixels = AdjustedWidthInPixels = _zoomFactor * pix_per_second * (double)duration / (double)1000;
 
@@ -1798,7 +1684,7 @@ namespace FASTBuildMonitorVSIX
 #endif
                             double allowedTextWidth = Math.Max(0.0f, _bordersRect.Width - 2 * _cTextLabeloffset_X);
 
-                            DrawText(dc, textToDisplay, _bordersRect.X + _cTextLabeloffset_X, _bordersRect.Y + _cTextLabeloffset_Y, allowedTextWidth, true, colorBrush);
+                            TextUtils.DrawText(dc, textToDisplay, _bordersRect.X + _cTextLabeloffset_X, _bordersRect.Y + _cTextLabeloffset_Y, allowedTextWidth, true, colorBrush);
                         }
                     }
                 }
@@ -2251,127 +2137,6 @@ namespace FASTBuildMonitorVSIX
 
                 _viewport = newViewport;
             }
-        }
-
-        // Text rendering stuff
-        private static GlyphTypeface _glyphTypeface = null;
-
-        private const double _cFontSize = 12.0f;
-
-        public static Point ComputeTextSize(string text)
-        {
-            Point result = new Point();
-
-            for (int charIndex = 0; charIndex < text.Length; charIndex++)
-            {
-                ushort glyphIndex = _glyphTypeface.CharacterToGlyphMap[text[charIndex]];
-
-                double width = _glyphTypeface.AdvanceWidths[glyphIndex] * _cFontSize;
-
-                result.Y = Math.Max(_glyphTypeface.AdvanceHeights[glyphIndex] * _cFontSize, result.Y);
-
-                result.X += width;
-            }
-
-            return result;
-        }
-
-        public static void DrawText(DrawingContext dc, string text, double x, double y, double maxWidth, bool bEnableDotDotDot, SolidColorBrush colorBrush)
-        {
-            ushort[] glyphIndexes = null;
-            double[] advanceWidths = null;
-
-            ushort[] tempGlyphIndexes = new ushort[text.Length];
-            double[] tempAdvanceWidths = new double[text.Length];
-
-            double totalTextWidth = 0;
-            double maxHeight = 0.0f;
-
-            bool needDoTDotDot = false;
-            double desiredTextWidth = maxWidth;
-            int charIndex = 0;
-
-            // Build the text info and measure the final text width
-            for (; charIndex < text.Length; charIndex++)
-            {
-                ushort glyphIndex = _glyphTypeface.CharacterToGlyphMap[text[charIndex]];
-                tempGlyphIndexes[charIndex] = glyphIndex;
-
-                double width = _glyphTypeface.AdvanceWidths[glyphIndex] * _cFontSize;
-                tempAdvanceWidths[charIndex] = width;
-
-                maxHeight = Math.Max(_glyphTypeface.AdvanceHeights[glyphIndex] * _cFontSize, maxHeight);
-
-                totalTextWidth += width;
-
-                if (totalTextWidth > desiredTextWidth)
-                {
-                    //we need to clip the text since it doesn't fit the allowed width
-                    //do a second measurement pass
-                    needDoTDotDot = true;
-                    break;
-                }
-            }
-
-            if (bEnableDotDotDot && needDoTDotDot)
-            {
-                ushort suffixGlyphIndex = _glyphTypeface.CharacterToGlyphMap['.'];
-                double suffixWidth = _glyphTypeface.AdvanceWidths[suffixGlyphIndex] * _cFontSize;
-
-                desiredTextWidth -= suffixWidth * 3;
-
-                for (; charIndex > 0; charIndex--)
-                {
-                    double removedCharacterWidth = tempAdvanceWidths[charIndex];
-
-                    totalTextWidth -= removedCharacterWidth;
-
-                    if (totalTextWidth <= desiredTextWidth)
-                    {
-                        charIndex--;
-                        break;
-                    }
-                }
-
-                int finalNumCharacters = charIndex + 1 + 3;
-
-                glyphIndexes = new ushort[finalNumCharacters];
-                advanceWidths = new double[finalNumCharacters];
-
-                Array.Copy(tempGlyphIndexes, glyphIndexes, charIndex + 1);
-                Array.Copy(tempAdvanceWidths, advanceWidths, charIndex + 1);
-
-                for (int i = charIndex + 1; i < finalNumCharacters; ++i)
-                {
-                    glyphIndexes[i] = suffixGlyphIndex;
-                    advanceWidths[i] = suffixWidth;
-                }
-            }
-            else
-            {
-                glyphIndexes = tempGlyphIndexes;
-                advanceWidths = tempAdvanceWidths;
-            }
-
-            double roundedX = Math.Round(x);
-            double roundedY = Math.Round(y + maxHeight);
-
-            GlyphRun gr = new GlyphRun(
-                _glyphTypeface,
-                0,       // Bi-directional nesting level
-                false,   // isSideways
-                _cFontSize,      // pt size
-                glyphIndexes,   // glyphIndices
-                new Point(roundedX, roundedY),           // baselineOrigin
-                advanceWidths,  // advanceWidths
-                null,    // glyphOffsets
-                null,    // characters
-                null,    // deviceFontName
-                null,    // clusterMap
-                null,    // caretStops
-                null);   // xmlLanguage
-
-            dc.DrawGlyphRun(colorBrush, gr);
         }
 
         HitTestResult HitTest(Point mousePosition)

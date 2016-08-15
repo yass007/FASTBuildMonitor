@@ -51,20 +51,22 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="FASTBuildMonitor.cs" />
-    <Compile Include="FASTBuildMonitorCommand.cs" />
-    <Compile Include="FASTBuildMonitorControl.xaml.cs">
+    <Compile Include="Code\FASTBuildMonitor.cs" />
+    <Compile Include="Code\FASTBuildMonitorCommand.cs" />
+    <Compile Include="Code\FASTBuildMonitorControl.xaml.cs">
       <DependentUpon>FASTBuildMonitorControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="FASTBuildMonitorPackage.cs" />
+    <Compile Include="Code\FASTBuildMonitorPackage.cs" />
+    <Compile Include="Code\GifImage.cs" />
+    <Compile Include="Code\TextUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources\Images.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Images.resx</DependentUpon>
     </Compile>
-    <Compile Include="SystemPerformanceGraphsCanvas.cs" />
-    <Compile Include="Timebar.cs" />
+    <Compile Include="Code\SystemPerformanceGraphsCanvas.cs" />
+    <Compile Include="Code\Timebar.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
@@ -108,7 +110,7 @@
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="FASTBuildMonitorControl.xaml">
+    <Page Include="Code\FASTBuildMonitorControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
