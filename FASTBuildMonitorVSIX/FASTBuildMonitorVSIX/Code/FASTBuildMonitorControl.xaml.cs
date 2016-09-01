@@ -26,10 +26,6 @@ using EnvDTE80;
 
 namespace FASTBuildMonitorVSIX
 {
-    /// <summary>
-    /// Interaction logic for MyControl.xaml
-    /// </summary>
-    /// 
     public partial class FASTBuildMonitorControl : UserControl
     {
         public const int LOG_VERSION = 1;
@@ -132,12 +128,10 @@ namespace FASTBuildMonitorVSIX
 
         private void OutputTextBox_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-
             if (e.ChangedButton == MouseButton.Left)
             {
                 TextBox tb = sender as TextBox;
                 String doubleClickedWord = tb.SelectedText;
-
 
                 if (tb.SelectionStart >= 0 && tb.SelectionLength > 0)
                 {
@@ -322,7 +316,6 @@ namespace FASTBuildMonitorVSIX
                 index++;
             }
         }
-
 
 
         /* Tab Control management */
@@ -634,15 +627,22 @@ namespace FASTBuildMonitorVSIX
                 }
             }
 
-
             //Accumulate some value
+            double oldZoomValue = _zoomFactor;
+
             _zoomFactor += zoomMultiplier * (double)e.Delta / 1000.0f;
             _zoomFactor = Math.Min(_zoomFactor, 30.0f);
             _zoomFactor = Math.Max(_zoomFactor, 0.05f);
 
+            if (oldZoomValue != _zoomFactor)
+            {
+                // if the zoom has changed the kick a new render update
+                SetRenderUpdateFlag(true);
+            }
+
             //Console.WriteLine("Zoom: {0} (multiplier: {1})", _zoomFactor, zoomMultiplier);
 
-            //disable auto-scrolling when we zoom
+            //disable auto-scrolling when we are zooming
             _autoScrolling = false;
 
             e.Handled = true;
@@ -783,6 +783,12 @@ namespace FASTBuildMonitorVSIX
             // graphs
             SystemGraphsCanvas.Children.Clear();
             _systemPerformanceGraphs = new SystemPerformanceGraphsCanvas(SystemGraphsCanvas);
+
+            // allow a free render update on the first frame after the reset
+            SetRenderUpdateFlag(true);
+
+            // reset the cached SteppedBuildTime value
+            _sPreviousSteppedBuildTimeMS = 0;
         }
 
         /* Build State Management */
@@ -949,6 +955,8 @@ namespace FASTBuildMonitorVSIX
             return currentTimeMS;
         }
 
+        private static Int64 _sPreviousSteppedBuildTimeMS = 0;
+
         public static Int64 GetCurrentBuildTimeMS(bool bUseTimeStep = false)
         {
             Int64 elapsedBuildTime = -_buildStartTimeMS;
@@ -962,6 +970,14 @@ namespace FASTBuildMonitorVSIX
                 if (bUseTimeStep)
                 {
                     elapsedBuildTime = (Int64)(Math.Truncate(elapsedBuildTime / cTimeStepMS) * cTimeStepMS);
+
+                    if (_sPreviousSteppedBuildTimeMS != elapsedBuildTime)
+                    {
+                        // if we have advanced in terms of stepped build Time than force a render update
+                        _StaticWindow.SetRenderUpdateFlag(true);
+
+                        _sPreviousSteppedBuildTimeMS = elapsedBuildTime;
+                    }
                 }
             }
             else
@@ -1620,14 +1636,53 @@ namespace FASTBuildMonitorVSIX
 
             public void OnRender(DrawingContext dc)
             {
+                // if the current event is in lowLOD mode
                 if (_isInLowLOD)
                 {
+                    bool bStartNewLODBlock = false;
+
                     if (_core._isLODBlockActive)
                     {
-                        _core._currentLODRect.Width = Math.Max(_bordersRect.X + _bordersRect.Width - _core._currentLODRect.X, 0.0f);
+                        // calculate the distance (in pixels) between the end of the current LOD block and the start of the next block
+                        double distance = _bordersRect.X - (_core._currentLODRect.X + _core._currentLODRect.Width);
+
+                        if (distance > 5.0f)
+                        {
+                            // if the distance is above the threshold close the current LOD block and start a new one
+                            VisualBrush brush = new VisualBrush();
+                            brush.Visual = CPUCore._sLODImage;
+                            brush.Stretch = Stretch.None;
+                            brush.TileMode = TileMode.Tile;
+                            brush.AlignmentY = AlignmentY.Top;
+                            brush.AlignmentX = AlignmentX.Left;
+                            brush.ViewportUnits = BrushMappingMode.Absolute;
+                            brush.Viewport = new Rect(0, 0, 40, 6);
+
+                            if (IsObjectVisibleInternal(_core._currentLODRect))
+                            {
+#if ENABLE_RENDERING_STATS
+                        _StaticWindow._numShapesDrawn++;
+#endif
+                                dc.DrawRectangle(brush, new Pen(Brushes.Gray, 1), _core._currentLODRect);
+                            }
+
+                            // start a new LOD block
+                            bStartNewLODBlock = true;
+                        }
+                        else
+                        {
+                            // if an LOD block is currently active then append the current event to it
+                            _core._currentLODRect.Width = Math.Max(_bordersRect.X + _bordersRect.Width - _core._currentLODRect.X, 0.0f);
+                        }
                     }
                     else
                     {
+                        bStartNewLODBlock = true;
+                    }
+
+                    if (bStartNewLODBlock)
+                    { 
+                        // if there is no LOD block currently active, start a new one                         
                         _core._currentLODRect.X = _bordersRect.X;
                         _core._currentLODRect.Y = _bordersRect.Y;
                         _core._currentLODRect.Width = 0.0f;
@@ -1891,6 +1946,9 @@ namespace FASTBuildMonitorVSIX
 
                 if (newPayLoadSize > 0)
                 {
+                    // we received new events, allow the render update to kick
+                    SetRenderUpdateFlag(true);
+
                     string newEventsRaw = System.Text.Encoding.Default.GetString(_fileBuffer.GetRange(_lastProcessedPosition, newPayLoadSize).ToArray());
                     string[] newEvents = newEventsRaw.Split(new char[] { '\n' });
 
@@ -1962,7 +2020,7 @@ namespace FASTBuildMonitorVSIX
             }
             else if (_buildRunningState == eBuildRunningState.Running && PollIsTargetProcessRunning() == false)
             {
-                // Detect cancelled builds
+                // Detect canceled builds
                 _latestTimeStampMS = GetCurrentSystemTimeMS();
 
                 ExecuteCommandStopBuild(null, _latestTimeStampMS);
@@ -2191,9 +2249,6 @@ namespace FASTBuildMonitorVSIX
 
         private void RenderUpdate()
         {
-            // Handling Mouse panning
-            UpdateMousePanning();
-
             // Resolve ViewPort center/size in case of zoom in/out event
             UpdateZoomTargetPosition();
 
@@ -2294,21 +2349,43 @@ namespace FASTBuildMonitorVSIX
 
         SystemPerformanceGraphsCanvas _systemPerformanceGraphs;
 
+        bool _bDoUpdateRender = true;   // Controls the update of the rendered elements 
+
+        private void SetRenderUpdateFlag( bool bAllowed)
+        {
+            // setting _bDoUpdateRender means that we are allowing RenderUpdate() to run on the very next frame (or the current frame)
+            _bDoUpdateRender = bAllowed;
+        }
+
+        private bool IsRenderUpdateAllowed()
+        {
+            return _bDoUpdateRender;
+        }
+
         private void HandleTick(object sender, EventArgs e)
         {
-            //try
+            try
             {
                 ProcessInputFileStream();
 
-                RenderUpdate();
+                // Handling Mouse panning, we do it here because it does not necessitate a RenderUpdate
+                UpdateMousePanning();
 
-                UpdateStatusBar();
+                if (IsRenderUpdateAllowed())
+                {
+                    RenderUpdate();
+
+                    UpdateStatusBar();
+
+                    SetRenderUpdateFlag(false);
+                }
+
             }
-            //catch (System.Exception ex)
-            //{
-            //    Console.WriteLine("Exception detected... Restarting! details: " + ex.ToString()) ;
-            //    ResetState();
-            //}
+            catch (System.Exception ex)
+            {
+                Console.WriteLine("Exception detected... Restarting! details: " + ex.ToString());
+                ResetState();
+            }
         }
     }
 }
