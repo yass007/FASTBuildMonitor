@@ -430,7 +430,7 @@ namespace FASTBuildMonitorVSIX
 
                     HitTestResult result = HitTest(mousePosition);
 
-                    if (result != null)
+                    if (result != null && result._event !=null)
                     {
                         //Console.WriteLine("\n\nHost: " + result._host._name);
                         //Console.WriteLine("core: " + result._core._coreIndex);
@@ -637,7 +637,7 @@ namespace FASTBuildMonitorVSIX
             if (oldZoomValue != _zoomFactor)
             {
                 // if the zoom has changed the kick a new render update
-                SetRenderUpdateFlag(true);
+                SetConditionalRenderUpdateFlag(true);
             }
 
             //Console.WriteLine("Zoom: {0} (multiplier: {1})", _zoomFactor, zoomMultiplier);
@@ -785,7 +785,7 @@ namespace FASTBuildMonitorVSIX
             _systemPerformanceGraphs = new SystemPerformanceGraphsCanvas(SystemGraphsCanvas);
 
             // allow a free render update on the first frame after the reset
-            SetRenderUpdateFlag(true);
+            SetConditionalRenderUpdateFlag(true);
 
             // reset the cached SteppedBuildTime value
             _sPreviousSteppedBuildTimeMS = 0;
@@ -974,7 +974,7 @@ namespace FASTBuildMonitorVSIX
                     if (_sPreviousSteppedBuildTimeMS != elapsedBuildTime)
                     {
                         // if we have advanced in terms of stepped build Time than force a render update
-                        _StaticWindow.SetRenderUpdateFlag(true);
+                        _StaticWindow.SetConditionalRenderUpdateFlag(true);
 
                         _sPreviousSteppedBuildTimeMS = elapsedBuildTime;
                     }
@@ -1012,10 +1012,79 @@ namespace FASTBuildMonitorVSIX
             public Line _lineSeparator = new Line();
 
             //LOD handling
-            public List<Rectangle> _usedLODBlocks = new List<Rectangle>();
             public bool _isLODBlockActive = false;
             public Rect _currentLODRect = new Rect();
+            public int _currentLODCount = 0;
 
+
+            public void StartNewLODBlock(Rect rect)
+            {
+                // Make sure the previous block is closed 
+                Debug.Assert(_isLODBlockActive == false && _currentLODCount == 0);
+
+                _currentLODRect = rect;
+                _currentLODCount = 1;
+                _isLODBlockActive = true;
+            }
+
+            public void CloseCurrentLODBlock()
+            {
+                // Make sure the current block has been started previously
+                Debug.Assert(_isLODBlockActive == true && _currentLODCount > 0);
+
+                _currentLODCount = 0;
+                _isLODBlockActive = false;
+            }
+
+            public bool IsLODBlockActive()
+            {
+                return _isLODBlockActive;
+            }
+
+            public void UpdateCurrentLODBlock(double newWitdh)
+            {
+                // Make sure the current block has been started previously
+                Debug.Assert(_isLODBlockActive == true && _currentLODCount > 0);
+
+                _currentLODCount++;
+
+                _currentLODRect.Width = newWitdh;
+            }
+
+            //ToolTip management
+            private class VisibleElement // Represents an element (event or LOD block) that has been successfully rendered in the last frame
+            {
+                public VisibleElement(Rect rect, string toolTipText, BuildEvent buildEvent)
+                {
+                    _rect = rect;
+                    _toolTipText = toolTipText;
+                    _buildEvent = buildEvent;
+                }
+
+                public bool HitTest(Point localMousePosition)
+                {
+                    return _rect.Contains(localMousePosition);
+                }
+
+                public Rect _rect;  // boundaries of the element
+                public string _toolTipText;
+                public BuildEvent _buildEvent;
+            }
+
+            private List<VisibleElement> _visibleElements = new List<VisibleElement>();
+
+            public void AddVisibleElement(Rect rect, string toolTipText, BuildEvent buildEvent = null)
+            {
+                _visibleElements.Add(new VisibleElement(rect, toolTipText, buildEvent));
+            }
+
+            public void ClearAllVisibleElements()
+            {
+                _visibleElements.Clear();
+            }
+
+
+            //......................
             public CPUCore(BuildHost parent, int coreIndex)
             {
                 _parent = parent;
@@ -1078,26 +1147,37 @@ namespace FASTBuildMonitorVSIX
 
             protected override void OnRender(DrawingContext dc)
             {
+                // First let's reset the list of visible elements since we will be recalculating it
+                ClearAllVisibleElements();
+
                 foreach (BuildEvent ev in _completedEvents)
                 {
                     ev.OnRender(dc);
                 }
 
                 // we need to close the currently active LOD block before rendering the active event
-                if (_isLODBlockActive)
+                if (IsLODBlockActive())
                 {
-                    _isLODBlockActive = false;
+                    // compute the absolute Rect given the origin of the current core
+                    Rect absoluteRect = new Rect(_x + _currentLODRect.X, _y + _currentLODRect.Y, _currentLODRect.Width, _currentLODRect.Height);
 
-                    VisualBrush brush = new VisualBrush();
-                    brush.Visual = _sLODImage;
-                    brush.Stretch = Stretch.None;
-                    brush.TileMode = TileMode.Tile;
-                    brush.AlignmentY = AlignmentY.Top;
-                    brush.AlignmentX = AlignmentX.Left;
-                    brush.ViewportUnits = BrushMappingMode.Absolute;
-                    brush.Viewport = new Rect(0, 0, 40, 20);
+                    if (IsObjectVisible(absoluteRect))
+                    {
+                        VisualBrush brush = new VisualBrush();
+                        brush.Visual = _sLODImage;
+                        brush.Stretch = Stretch.None;
+                        brush.TileMode = TileMode.Tile;
+                        brush.AlignmentY = AlignmentY.Top;
+                        brush.AlignmentX = AlignmentX.Left;
+                        brush.ViewportUnits = BrushMappingMode.Absolute;
+                        brush.Viewport = new Rect(0, 0, 40, 20);
 
-                    dc.DrawRectangle(brush, new Pen(Brushes.Black, 1), _currentLODRect);
+                        dc.DrawRectangle(brush, new Pen(Brushes.Black, 1), _currentLODRect);
+
+                        AddVisibleElement(_currentLODRect, string.Format("{0} events", _currentLODCount));
+                    }
+
+                    CloseCurrentLODBlock();
                 }
 
                 if (_activeEvent != null)
@@ -1108,19 +1188,30 @@ namespace FASTBuildMonitorVSIX
 
             public HitTestResult HitTest(Point localMousePosition)
             {
-                HitTestResult result = null;
-
-                foreach (BuildEvent ev in _completedEvents)
+                foreach (VisibleElement element in _visibleElements)
                 {
-                    result = ev.HitTest(localMousePosition);
-
-                    if (result != null)
+                    if (element.HitTest(localMousePosition))
                     {
-                        break;
+                        return new HitTestResult(this._parent, this, element._buildEvent);
                     }
                 }
 
-                return result;
+                return null;
+            }
+
+            public bool UpdateToolTip(Point localMousePosition)
+            {
+                foreach (VisibleElement element in _visibleElements)
+                {
+                    if (element.HitTest(localMousePosition))
+                    {
+                        _toolTip.Content = element._toolTipText;
+
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             public void RenderUpdate(ref double X, ref double Y)
@@ -1248,6 +1339,26 @@ namespace FASTBuildMonitorVSIX
                 }
 
                 return result;
+            }
+
+            public bool UpdateToolTip(Point mousePosition)
+            {
+                foreach (CPUCore core in _cores)
+                {
+                    double x = Canvas.GetLeft(core);
+                    double y = Canvas.GetTop(core);
+
+                    Rect rect = new Rect(x, y, core.Width, core.Height);
+
+                    if (rect.Contains(mousePosition))
+                    {
+                        Point localMousePosition = new Point(mousePosition.X - x, mousePosition.Y - y);
+                        return core.UpdateToolTip(localMousePosition);
+                    }
+                }
+
+                return false;
+
             }
 
             public void RenderUpdate(double X, ref double Y)
@@ -1444,7 +1555,7 @@ namespace FASTBuildMonitorVSIX
                 switch (_state)
                 {
                     case BuildEventState.SUCCEEDED_COMPLETED:
-                        if (_name.Contains(".cpp") || _name.Contains(".c"))
+                        if (_name.Contains(".obj"))
                         {
                             _brush = _sSuccessCodeBrush;
                         }
@@ -1618,13 +1729,6 @@ namespace FASTBuildMonitorVSIX
 
                 // Make sure we update our Canvas boundaries
                 UpdateEventsCanvasMaxSize(X, Y);
-
-                // Detect the mouse cursor is over our element and display a Tooltip
-                Point mousePosition = Mouse.GetPosition(_core);
-                if (_bordersRect.Contains(mousePosition))
-                {
-                    _core._toolTip.Content = _toolTipText;
-                }
             }
 
             public bool IsObjectVisibleInternal(Rect localRect)
@@ -1641,7 +1745,7 @@ namespace FASTBuildMonitorVSIX
                 {
                     bool bStartNewLODBlock = false;
 
-                    if (_core._isLODBlockActive)
+                    if (_core.IsLODBlockActive())
                     {
                         // calculate the distance (in pixels) between the end of the current LOD block and the start of the next block
                         double distance = _bordersRect.X - (_core._currentLODRect.X + _core._currentLODRect.Width);
@@ -1661,10 +1765,14 @@ namespace FASTBuildMonitorVSIX
                             if (IsObjectVisibleInternal(_core._currentLODRect))
                             {
 #if ENABLE_RENDERING_STATS
-                        _StaticWindow._numShapesDrawn++;
+                                _StaticWindow._numShapesDrawn++;
 #endif
                                 dc.DrawRectangle(brush, new Pen(Brushes.Gray, 1), _core._currentLODRect);
+
+                                _core.AddVisibleElement(_core._currentLODRect, string.Format("{0} events", _core._currentLODCount));
                             }
+
+                            _core.CloseCurrentLODBlock();
 
                             // start a new LOD block
                             bStartNewLODBlock = true;
@@ -1672,7 +1780,7 @@ namespace FASTBuildMonitorVSIX
                         else
                         {
                             // if an LOD block is currently active then append the current event to it
-                            _core._currentLODRect.Width = Math.Max(_bordersRect.X + _bordersRect.Width - _core._currentLODRect.X, 0.0f);
+                            _core.UpdateCurrentLODBlock(Math.Max(_bordersRect.X + _bordersRect.Width - _core._currentLODRect.X, 0.0f));
                         }
                     }
                     else
@@ -1681,19 +1789,13 @@ namespace FASTBuildMonitorVSIX
                     }
 
                     if (bStartNewLODBlock)
-                    { 
-                        // if there is no LOD block currently active, start a new one                         
-                        _core._currentLODRect.X = _bordersRect.X;
-                        _core._currentLODRect.Y = _bordersRect.Y;
-                        _core._currentLODRect.Width = 0.0f;
-                        _core._currentLODRect.Height = _bordersRect.Height;
-
-                        _core._isLODBlockActive = true;
+                    {
+                        _core.StartNewLODBlock(new Rect(_bordersRect.X, _bordersRect.Y, 0.0f, _bordersRect.Height));
                     }
                 }
                 else
                 {
-                    if (_core._isLODBlockActive)
+                    if (_core.IsLODBlockActive())
                     {
                         VisualBrush brush = new VisualBrush();
                         brush.Visual = CPUCore._sLODImage;
@@ -1710,13 +1812,18 @@ namespace FASTBuildMonitorVSIX
                         _StaticWindow._numShapesDrawn++;
 #endif
                             dc.DrawRectangle(brush, new Pen(Brushes.Gray, 1), _core._currentLODRect);
+
+                            _core.AddVisibleElement(_core._currentLODRect, string.Format("{0} events", _core._currentLODCount));
                         }
 
-                        _core._isLODBlockActive = false;
+                        _core.CloseCurrentLODBlock();
                     }
 
                     if (IsObjectVisibleInternal(_bordersRect))
                     {
+
+                        _core.AddVisibleElement(_bordersRect, _toolTipText, this);
+
 #if ENABLE_RENDERING_STATS
                     _StaticWindow._numShapesDrawn++;
 #endif
@@ -1947,7 +2054,7 @@ namespace FASTBuildMonitorVSIX
                 if (newPayLoadSize > 0)
                 {
                     // we received new events, allow the render update to kick
-                    SetRenderUpdateFlag(true);
+                    SetConditionalRenderUpdateFlag(true);
 
                     string newEventsRaw = System.Text.Encoding.Default.GetString(_fileBuffer.GetRange(_lastProcessedPosition, newPayLoadSize).ToArray());
                     string[] newEvents = newEventsRaw.Split(new char[] { '\n' });
@@ -2249,18 +2356,37 @@ namespace FASTBuildMonitorVSIX
 
         private void RenderUpdate()
         {
+            _timeBar.RenderUpdate(10, 0, _zoomFactor);
+
+            _systemPerformanceGraphs.RenderUpdate(10, 0, _zoomFactor);
+                        
+            // Update the tooltips
+            Point mousePosition = Mouse.GetPosition(EventsScrollViewer);
+
+            mousePosition.X += EventsScrollViewer.HorizontalOffset;
+            mousePosition.Y += EventsScrollViewer.VerticalOffset;
+
+            foreach (DictionaryEntry entry in _hosts)
+            {
+                BuildHost host = entry.Value as BuildHost;
+
+                if (host.UpdateToolTip(mousePosition))
+                {
+                    break;
+                }
+            }
+        }
+
+        private void ConditionalRenderUpdate()
+        {
             // Resolve ViewPort center/size in case of zoom in/out event
             UpdateZoomTargetPosition();
 
-            // Update the viewport and decide if we have to redraw the UI
+            // Update the viewport and decide if we have to redraw the Events canvas
             UpdateViewport();
 
             _maxX = 0.0f;
             _maxY = 0.0f;
-
-            _timeBar.RenderUpdate(10, 0, _zoomFactor);
-
-            _systemPerformanceGraphs.RenderUpdate(10, 0, _zoomFactor);
 
             double X = 10;
             double Y = 10;
@@ -2351,13 +2477,13 @@ namespace FASTBuildMonitorVSIX
 
         bool _bDoUpdateRender = true;   // Controls the update of the rendered elements 
 
-        private void SetRenderUpdateFlag( bool bAllowed)
+        private void SetConditionalRenderUpdateFlag( bool bAllowed)
         {
             // setting _bDoUpdateRender means that we are allowing RenderUpdate() to run on the very next frame (or the current frame)
             _bDoUpdateRender = bAllowed;
         }
 
-        private bool IsRenderUpdateAllowed()
+        private bool IsConditionalRenderUpdateAllowed()
         {
             return _bDoUpdateRender;
         }
@@ -2366,18 +2492,23 @@ namespace FASTBuildMonitorVSIX
         {
             try
             {
+                // Process the input log for new events
                 ProcessInputFileStream();
 
                 // Handling Mouse panning, we do it here because it does not necessitate a RenderUpdate
                 UpdateMousePanning();
 
-                if (IsRenderUpdateAllowed())
+                // Call the non-expensive Render Update every frame
+                RenderUpdate();
+
+                // Call the Conditional Render Update only when needed since it is expensive
+                if (IsConditionalRenderUpdateAllowed())
                 {
-                    RenderUpdate();
+                    ConditionalRenderUpdate();
 
                     UpdateStatusBar();
 
-                    SetRenderUpdateFlag(false);
+                    SetConditionalRenderUpdateFlag(false);
                 }
 
             }
