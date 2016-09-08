@@ -9,9 +9,9 @@ Instructions (Work in progress):
 
 4) Restart VisualStudio and Click on Tools->FASTBuildMonitor
 
-5) Clone/download the custom FASTBuild code @ https://github.com/liamkf/fastbuild (Make sure you get the visualizer Branch).
+5) Clone/download the FASTBuild dev Branch @ https://github.com/fastbuild/fastbuild/tree/dev (Make sure you get the DEV Branch).
 
-6) Compile the custom FBuild.exe from the branch above.
+6) Compile the FBuild.exe from the branch above.
 
 7) Build with the new FBuild.exe
 
