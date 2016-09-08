@@ -121,6 +121,10 @@ namespace FASTBuildMonitorVSIX
                     _StaticWindow.OutputWindowComboBox.SelectedIndex = 0;
                 }
             }
+            else if (e.KeyboardDevice.Modifiers == ModifierKeys.Control && e.Key == Key.C)
+            {
+                Clipboard.SetText(_StaticWindow.OutputTextBox.SelectedText);
+            }                 
         }
 
 
