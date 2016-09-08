@@ -1688,6 +1688,8 @@ namespace FASTBuildMonitorVSIX
                     borderRectWidth = OriginalWidthInPixels + pix_per_second * cTimeStepMS / 1000.0f;
 
                     borderRectWidth = Math.Max(Math.Min(_cMinTextLabelWidthThreshold * 2, textSize.X), borderRectWidth);
+
+                    _toolTipText = "BUILDING: " + _name.Replace("\"", "") + "\nTime Elapsed: " + GetTimeFormattedString(duration);
                 }
                 else
                 {
