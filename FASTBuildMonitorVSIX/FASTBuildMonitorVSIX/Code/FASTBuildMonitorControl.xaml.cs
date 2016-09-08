@@ -223,7 +223,7 @@ namespace FASTBuildMonitorVSIX
 
                     if (_buildEvent != null)
                     {
-                        result = _buildEvent._name;
+                        result = _buildEvent._name.Substring(1, _buildEvent._name.Length - 2);
                     }
                     else
                     {
@@ -294,7 +294,7 @@ namespace FASTBuildMonitorVSIX
                 {
                     if (filter._buildEvent != null && (selectedFilter._buildEvent == null || filter._buildEvent == selectedFilter._buildEvent))
                     {
-                        OutputTextBox.AppendText(filter._buildEvent._outputMessages);
+                        OutputTextBox.AppendText(filter._buildEvent._outputMessages + "\n");
                     }
                 }
             }
