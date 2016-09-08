@@ -1,4 +1,6 @@
 # FASTBuild Monitor
+![msfastbuild example image](http://dualsoftinc.com/wp-content/uploads/2016/09/FASTBuildMonitorScreenshot.png "msfastbuild example")
+
 A graphical Visualizer for FASTBuild (Supports VS 2012, 2013, 2015).
 
 Instructions (Work in progress):
