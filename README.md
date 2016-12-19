@@ -3,20 +3,20 @@
 
 https://www.youtube.com/watch?v=saxFpmNq_Vw
 
-A graphical Visualizer for FASTBuild (Supports VS 2012, 2013, 2015).
+A graphical Visualizer for FASTBuild (Supports VS 2012, 2013, 2015). Now officially supported by FASTBuild starting v0.92 
 
-Instructions (Work in progress):
 
-1) Clone/download the git hub repo.
 
-2) Install the VSIX package inside .\FASTBuildMonitorVSIX\FASTBuildMonitorVSIX\vsix\FASTBuildMonitorVSIX.vsix
+##Instructions :
+
+1) Download the Release zip file.
+
+2) Install the VSIX package FASTBuildMonitorVSIX.vsix
 
 4) Restart VisualStudio and Click on Tools->FASTBuildMonitor
 
-5) Clone/download the FASTBuild dev Branch @ https://github.com/fastbuild/fastbuild/tree/dev (Make sure you get the DEV Branch).
+5) Download FASTBuild 0.92 or higher (http://fastbuild.org/docs/download.html).
 
-6) Compile the FBuild.exe from the branch above.
+6) Launch FBuild.exe with the -monitor argument
 
-7) Build with the new FBuild.exe
-
-8) The FASTBuildMonitor VS extension should show the live build activity (or the previous build results).
+7) The FASTBuildMonitor VS extension should show the live build activity (or the previous build results).
