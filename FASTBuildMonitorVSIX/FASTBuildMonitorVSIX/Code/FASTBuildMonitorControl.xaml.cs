@@ -21,6 +21,7 @@ using System.Diagnostics;
 using System.Collections;
 using System.Text.RegularExpressions;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using EnvDTE;
 using EnvDTE80;
 
@@ -2266,7 +2267,7 @@ namespace FASTBuildMonitorVSIX
 
         private void ExecuteCommandProgressStatus(string[] tokens)
         {
-            float progressPCT = float.Parse(tokens[CommandArgumentIndex.PROGRESS_STATUS_PROGRESS_PCT]);
+            float progressPCT = float.Parse(tokens[CommandArgumentIndex.PROGRESS_STATUS_PROGRESS_PCT], CultureInfo.InvariantCulture);
 
             // Update the build status after each job's result
             UpdateBuildProgress(progressPCT);
