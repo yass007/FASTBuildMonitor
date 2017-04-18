@@ -1,5 +1,5 @@
 ﻿//------------------------------------------------------------------------------
-// Copyright 2016 Yassine Riahi and Liam Flookes. 
+// Copyright 2017 Yassine Riahi and Liam Flookes. 
 // Provided under a MIT License, see license file on github.
 //------------------------------------------------------------------------------
 

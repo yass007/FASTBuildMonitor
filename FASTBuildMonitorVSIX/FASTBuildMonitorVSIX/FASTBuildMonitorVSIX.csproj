@@ -96,6 +96,9 @@
     <None Include="Resources\Spinner.gif" />
     <None Include="Resources\Success-cached.png" />
     <None Include="Resources\SettingsTabIcon.png" />
+    <Content Include="Resources\race_flag.png" />
+    <None Include="Resources\race_flag_lost.png" />
+    <None Include="Resources\race_flag_win.png" />
     <Content Include="Resources\Success-code.png">
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>

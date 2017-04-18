@@ -175,4 +175,13 @@
   <data name="Success_preprocessed" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Success-preprocessed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="race_flag" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>race_flag.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="race_flag_lost" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>race_flag_lost.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="race_flag_win" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>race_flag_win.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

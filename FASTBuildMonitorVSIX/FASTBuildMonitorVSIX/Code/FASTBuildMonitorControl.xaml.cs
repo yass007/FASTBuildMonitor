@@ -1,5 +1,5 @@
 ﻿//------------------------------------------------------------------------------
-// Copyright 2016 Yassine Riahi and Liam Flookes. 
+// Copyright 2017 Yassine Riahi and Liam Flookes. 
 // Provided under a MIT License, see license file on github.
 //------------------------------------------------------------------------------
 
@@ -17,7 +17,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.IO;
-using System.Diagnostics;
 using System.Collections;
 using System.Text.RegularExpressions;
 using System.Collections.ObjectModel;
@@ -59,7 +58,7 @@ namespace FASTBuildMonitorVSIX
             // System Graphs display
             _systemPerformanceGraphs = new SystemPerformanceGraphsCanvas(SystemGraphsCanvas);
 
-            //events
+            // Events
             this.Loaded += FASTBuildMonitorControl_Loaded;
 
             EventsScrollViewer.PreviewMouseWheel += MainWindow_MouseWheel;
@@ -1129,7 +1128,7 @@ namespace FASTBuildMonitorVSIX
                 return bOK;
             }
 
-            public bool UnScheduleEvent(Int64 timeCompleted, string eventName, BuildEventState jobResult, string outputMessages, bool bForce = false)
+            public bool UnScheduleEvent(Int64 timeCompleted, string eventName, BuildEventState jobResult, bool bIsLocalJob, string outputMessages, bool bForce = false)
             {
                 bool bOK = (_activeEvent != null && (_activeEvent._name == eventName || bForce));
 
@@ -1140,7 +1139,7 @@ namespace FASTBuildMonitorVSIX
                         _activeEvent.SetOutputMessages(outputMessages);
                     }
 
-                    _activeEvent.Stop(timeCompleted, jobResult);
+                    _activeEvent.Stop(timeCompleted, jobResult, bIsLocalJob);
 
                     _completedEvents.Add(_activeEvent);
 
@@ -1312,16 +1311,37 @@ namespace FASTBuildMonitorVSIX
                 }
             }
 
-            public void OnCompleteEvent(Int64 timeCompleted, string eventName, BuildEventState jobResult, string outputMessages)
+            public void OnCompleteEvent(Int64 timeCompleted, string eventName, string hostName, BuildEventState jobResult, string outputMessages)
             {
+				bool bLocalJob = (hostName == _name);	// determine if we own the job that's about to be completed
+
                 for (int i = 0; i < _cores.Count; ++i)
                 {
-                    if (_cores[i].UnScheduleEvent(timeCompleted, eventName, jobResult, outputMessages))
+                    if (_cores[i].UnScheduleEvent(timeCompleted, eventName, jobResult, bLocalJob, outputMessages))
                     {
                         break;
                     }
                 }
             }
+
+			public bool FindAndFlagRacingEvents(string eventName)
+			{
+				bool bFoundRacingEvents = false;
+
+				foreach (CPUCore core in _cores)
+				{
+					if (core._activeEvent != null && core._activeEvent._name == eventName) 
+					{
+						core._activeEvent._isRacingJob = true;
+
+						bFoundRacingEvents = true;
+
+						break;
+					}
+				}
+
+				return bFoundRacingEvents;
+			}
 
             public HitTestResult HitTest(Point mousePosition)
             {
@@ -1450,8 +1470,11 @@ namespace FASTBuildMonitorVSIX
             // Attributes
             public CPUCore _core = null;
 
-            public Int64 _timeStarted = 0;    // in ms
-            public Int64 _timeFinished = 0;    // in ms
+            public Int64 _timeStarted = 0;		// in ms
+            public Int64 _timeFinished = 0;		// in ms
+
+			public bool _isRacingJob = false;   // tells us if this is a local job that is racing a remote one
+			public bool _wonRace = true;
 
             public string _name;
             public string _fileName; // extracted from the full name
@@ -1482,12 +1505,17 @@ namespace FASTBuildMonitorVSIX
             public static ImageBrush _sFailedBrush = new ImageBrush();
             public static ImageBrush _sTimeoutBrush = new ImageBrush();
             public static ImageBrush _sRunningBrush = new ImageBrush();
+			public static ImageBrush _sRacingIconBrush = new ImageBrush();
+			public static ImageBrush _sRacingWinIconBrush = new ImageBrush();
+			public static ImageBrush _sRacingLostIconBrush = new ImageBrush();
 
-            // Constants
-            private const int _cTextLabeloffset_X = 4;
+			// Constants
+			private const int _cTextLabeloffset_X = 4;
             private const int _cTextLabeloffset_Y = 4;
             private const double _cMinTextLabelWidthThreshold = 50.0f; // The minimum element width to be eligible for text display
             private const double _cMinDotDotDotWidthThreshold = 20.0f; // The minimum element width to be eligible for a "..." display
+			private const double _cRacingIconWidth = 20.0f;
+
 
             public static void StaticInitialize()
             {
@@ -1498,8 +1526,11 @@ namespace FASTBuildMonitorVSIX
                 _sFailedBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Failed);
                 _sTimeoutBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Timeout);
                 _sRunningBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.Running);
+				_sRacingIconBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.race_flag);
+				_sRacingWinIconBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.race_flag_win);
+				_sRacingLostIconBrush.ImageSource = GetBitmapImage(FASTBuildMonitorVSIX.Resources.Images.race_flag_lost);
 
-                _sbInitialized = true;
+				_sbInitialized = true;
             }
 
             public BuildEvent(string name, Int64 timeStarted)
@@ -1539,7 +1570,7 @@ namespace FASTBuildMonitorVSIX
                 _toolTipText = "BUILDING: " + _name.Replace("\"", "");
             }
 
-            public void Stop(Int64 timeFinished, BuildEventState jobResult)
+            public void Stop(Int64 timeFinished, BuildEventState jobResult, bool bIsLocalJob)
             {
                 _timeFinished = timeFinished;
 
@@ -1560,42 +1591,60 @@ namespace FASTBuildMonitorVSIX
                 switch (_state)
                 {
                     case BuildEventState.SUCCEEDED_COMPLETED:
-                        if (_name.Contains(".obj"))
-                        {
-                            _brush = _sSuccessCodeBrush;
-                        }
-                        else
-                        {
-                            _brush = _sSuccessNonCodeBrush;
-                        }
-                        _toolTipText += "Success";
+						{
+							if (_name.Contains(".obj"))
+							{
+								_brush = _sSuccessCodeBrush;
+							}
+							else
+							{
+								_brush = _sSuccessNonCodeBrush;
+							}
+							_toolTipText += "Success";
 
-                        break;
+							if (bIsLocalJob)
+							{
+								_toolTipText += " (Won Race!)";
+
+								_wonRace = true;
+							}
+							else
+							{
+								_toolTipText += " (Lost Race!)";
+
+								_wonRace = false;
+							}
+						}
+						break;
+
                     case BuildEventState.SUCCEEDED_CACHED:
-                        _brush = _sSuccessCachedBrush;
-
-                        _toolTipText += "Success(Cached)";
-
-                        break;
+						{
+							_brush = _sSuccessCachedBrush;
+							_toolTipText += "Success(Cached)";
+						}
+						break;
 
                     case BuildEventState.SUCCEEDED_PREPROCESSED:
-                        _brush = _sSuccessPreprocessedBrush;
+						{
+							_brush = _sSuccessPreprocessedBrush;
+							_toolTipText += "Success(Preprocess)";
+						}
+						break;
 
-                        _toolTipText += "Success(Preprocess)";
-
-                        break;
                     case BuildEventState.FAILED:
+						{
+							_brush = _sFailedBrush;
+							_toolTipText += "Errors";
+						}
+						break;
 
-                        _brush = _sFailedBrush;
-                        _toolTipText += "Errors";
-
-                        break;
                     case BuildEventState.TIMEOUT:
+						{
+							_brush = _sTimeoutBrush;
+							_toolTipText += "Timeout";
+						}
+						break;
 
-                        _brush = _sTimeoutBrush;
-                        _toolTipText += "Timeout";
-
-                        break;
                     default:
                         break;
                 }
@@ -1851,8 +1900,15 @@ namespace FASTBuildMonitorVSIX
                             dc.DrawLine(pen, P0, P1);
                             dc.DrawLine(pen, P0, P3);
                             dc.DrawLine(pen, P3, P2);
-                        }
-                        else
+
+							if (_isRacingJob && _progressRect.Width >= _cRacingIconWidth)
+							{
+								Rect racingIconRect = new Rect(_progressRect.X, _progressRect.Y, _cRacingIconWidth, _progressRect.Height);
+
+								dc.DrawImage(_sRacingIconBrush.ImageSource, racingIconRect);
+							}
+						}
+						else
                         {
                             switch(_state)
                             {
@@ -1863,11 +1919,27 @@ namespace FASTBuildMonitorVSIX
                             }
 
                             dc.DrawRectangle(new VisualBrush(), new Pen(Brushes.Gray, 1), _bordersRect);
-                        }
 
-                        string textToDisplay = null;
+							if (_isRacingJob && _progressRect.Width >= _cRacingIconWidth)
+							{
+								Rect racingIconRect = new Rect(_progressRect.X, _progressRect.Y, _cRacingIconWidth, _progressRect.Height);
 
-                        if (_bordersRect.Width > _cMinTextLabelWidthThreshold)
+								if(_wonRace)
+								{
+									dc.DrawImage(_sRacingWinIconBrush.ImageSource, racingIconRect);
+								}
+								else
+								{
+									dc.DrawImage(_sRacingLostIconBrush.ImageSource, racingIconRect);
+								}
+							}
+						}
+
+						string textToDisplay = null;
+
+						double textWidthThreshold = _cMinTextLabelWidthThreshold + (_isRacingJob ? _cRacingIconWidth : 0.0f);
+
+                        if (_bordersRect.Width > textWidthThreshold)
                         {
                             textToDisplay = _fileName;
                         }
@@ -1881,9 +1953,11 @@ namespace FASTBuildMonitorVSIX
 #if ENABLE_RENDERING_STATS
                         _StaticWindow._numTextElementsDrawn++;
 #endif
-                            double allowedTextWidth = Math.Max(0.0f, _bordersRect.Width - 2 * _cTextLabeloffset_X);
+                            double allowedTextWidth = Math.Max(0.0f, _bordersRect.Width - 2 * _cTextLabeloffset_X - (_isRacingJob? _cRacingIconWidth : 0.0f));
 
-                            TextUtils.DrawText(dc, textToDisplay, _bordersRect.X + _cTextLabeloffset_X, _bordersRect.Y + _cTextLabeloffset_Y, allowedTextWidth, true, colorBrush);
+							double textXOffset = _bordersRect.X + _cTextLabeloffset_X + (_isRacingJob?_cRacingIconWidth : 0.0f);
+
+							TextUtils.DrawText(dc, textToDisplay, textXOffset, _bordersRect.Y + _cTextLabeloffset_Y, allowedTextWidth, true, colorBrush);
                         }
                     }
                 }
@@ -2178,20 +2252,20 @@ namespace FASTBuildMonitorVSIX
 
             if (_bPreparingBuildsteps)
             {
-                _localHost.OnCompleteEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.SUCCEEDED_COMPLETED, "");
-            }
+                _localHost.OnCompleteEvent(timeStamp, _cPrepareBuildStepsText, "", BuildEventState.SUCCEEDED_COMPLETED, "");
 
-            // Stop all the active events currently running
-            foreach (DictionaryEntry entry in _hosts)
+				_bPreparingBuildsteps = false;
+			}
+
+			// Stop all the active events currently running
+			foreach (DictionaryEntry entry in _hosts)
             {
                 BuildHost host = entry.Value as BuildHost;
                 foreach (CPUCore core in host._cores)
                 {
-                    core.UnScheduleEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.TIMEOUT, "", true);
+                    core.UnScheduleEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.TIMEOUT, false, "", true);
                 }
             }
-
-            _bPreparingBuildsteps = false;
 
             _buildRunningState = eBuildRunningState.Ready;
 
@@ -2218,10 +2292,12 @@ namespace FASTBuildMonitorVSIX
 
             if (_bPreparingBuildsteps)
             {
-                _localHost.OnCompleteEvent(timeStamp, _cPrepareBuildStepsText, BuildEventState.SUCCEEDED_COMPLETED, "");
-            }
+                _localHost.OnCompleteEvent(timeStamp, _cPrepareBuildStepsText, hostName, BuildEventState.SUCCEEDED_COMPLETED, "");
 
-            BuildEvent newEvent = new BuildEvent(eventName, timeStamp);
+				_bPreparingBuildsteps = false;
+			}
+
+			BuildEvent newEvent = new BuildEvent(eventName, timeStamp);
 
             BuildHost host = null;
             if (_hosts.ContainsKey(hostName))
@@ -2234,6 +2310,27 @@ namespace FASTBuildMonitorVSIX
                 host = new BuildHost(hostName);
                 _hosts.Add(hostName, host);
             }
+
+
+			// Find out if this new Job is local and is racing another remote one
+			if(host.bLocalHost)
+			{
+				foreach (DictionaryEntry entry in _hosts)
+				{
+					BuildHost otherHost = entry.Value as BuildHost;
+
+					if(otherHost != host)
+					{
+						if(otherHost.FindAndFlagRacingEvents(eventName))
+						{
+							if(!newEvent._isRacingJob)
+							{
+								newEvent._isRacingJob = true;
+							}
+						}
+					}
+				}
+			}
 
             host.OnStartEvent(newEvent);
         }
@@ -2259,7 +2356,8 @@ namespace FASTBuildMonitorVSIX
             foreach (DictionaryEntry entry in _hosts)
             {
                 BuildHost host = entry.Value as BuildHost;
-                host.OnCompleteEvent(timeStamp, eventName, jobResult, eventOutputMessages);
+								
+                host.OnCompleteEvent(timeStamp, eventName, hostName, jobResult, eventOutputMessages);
             }
 
             UpdateBuildStatus(jobResult);
