@@ -2379,9 +2379,9 @@ namespace FASTBuildMonitorVSIX
             string groupName = tokens[CommandArgumentIndex.GRAPH_GROUP_NAME]; 
             string counterName = tokens[CommandArgumentIndex.GRAPH_COUNTER_NAME].Substring(1, tokens[CommandArgumentIndex.GRAPH_COUNTER_NAME].Length - 2); // Remove the quotes at the start and end 
             string counterUnitTag = tokens[CommandArgumentIndex.GRAPH_COUNTER_UNIT_TAG];
-            float value = float.Parse(tokens[CommandArgumentIndex.GRAPH_COUNTER_VALUE]);
+            float value = float.Parse(tokens[CommandArgumentIndex.GRAPH_COUNTER_VALUE], CultureInfo.InvariantCulture);
 
-            _systemPerformanceGraphs.HandleLogEvent(timeStamp, groupName, counterName, counterUnitTag, value);
+			_systemPerformanceGraphs.HandleLogEvent(timeStamp, groupName, counterName, counterUnitTag, value);
         }
 
         private static bool IsObjectVisible(Rect objectRect)
