@@ -380,17 +380,17 @@ namespace FASTBuildMonitorVSIX
             string authorsText = "Yassine Riahi & Liam Flookes";
             string packageNameText = "FASTBuildMonitorVSIX";
 
-            // Find out the VSIX info
-            FASTBuildMonitorPackage.VSIXPackageInformation packageInfo = FASTBuildMonitorPackage._instance != null ? FASTBuildMonitorPackage._instance.GetCurrentVSIXPackageInformation() : null;
+			// Find out the VSIX info
+			FASTBuildMonitorPackage.VSIXPackageInformation packageInfo = FASTBuildMonitorPackage._instance != null ? FASTBuildMonitorPackage._instance.GetCurrentVSIXPackageInformation() : null;
 
-            if (packageInfo != null)
-            {
-                versionText = packageInfo._version.ToString();
-                authorsText = packageInfo._authors;
-                packageNameText = packageInfo._packageName;
-            }
+			if (packageInfo != null)
+			{
+				versionText = packageInfo._version != null? packageInfo._version.ToString() : versionText;
+				authorsText = packageInfo._authors != null? packageInfo._authors: authorsText;
+				packageNameText = packageInfo._packageName != null? packageInfo._packageName: packageNameText;
+			}
 
-            AboutTextBlock.Text = string.Format("{0} v{1}\nCopyright (c) 2016 {2}.\nProvided under a MIT License, see license file on github.", packageNameText, versionText, authorsText);
+			AboutTextBlock.Text = string.Format("{0} v{1}\nCopyright (c) 2016 {2}.\nProvided under a MIT License, see license file on github.", packageNameText, versionText, authorsText);
         }
 
 

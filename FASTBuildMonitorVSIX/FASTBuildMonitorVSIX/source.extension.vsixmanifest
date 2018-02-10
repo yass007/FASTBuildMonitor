@@ -1,21 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
-  <Metadata>
-    <Identity Id="FASTBuildMonitorVSIX.44bf85a5-7635-4a2e-86d7-7b7f3bf757a8" Version="1.021" Language="en-US" Publisher="Copyright 2017 KnownShippable (Yassine Riahi &amp; Liam Flookes)" />
-    <DisplayName>FASTBuildMonitorVSIX</DisplayName>
-    <Description xml:space="preserve">FASTBuild Visual Studio viewer.</Description>
-    <MoreInfo>http:\\www.KnownShippable.com</MoreInfo>
-  </Metadata>
-  <Installation>
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0]" />
-    <InstallationTarget Version="[11.0]" Id="Microsoft.VisualStudio.Pro" />
-    <InstallationTarget Version="[12.0]" Id="Microsoft.VisualStudio.Community" />
-    <InstallationTarget Version="[12.0]" Id="Microsoft.VisualStudio.Pro" />
-  </Installation>
-  <Dependencies>
-    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
-  </Dependencies>
-  <Assets>
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-  </Assets>
+    <Metadata>
+        <Identity Id="FASTBuildMonitorVSIX.44bf85a5-7635-4a2e-86d7-7b7f3bf757a8" Version="1.101" Language="en-US" Publisher="Copyright 2018 KnownShippable (Yassine Riahi &amp; Liam Flookes)" />
+        <DisplayName>FASTBuildMonitorVSIX</DisplayName>
+        <Description xml:space="preserve">FASTBuild Visual Studio viewer.</Description>
+        <MoreInfo>http:\\www.KnownShippable.com</MoreInfo>
+    </Metadata>
+    <Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0]" />
+        <InstallationTarget Version="[11.0]" Id="Microsoft.VisualStudio.Pro" />
+        <InstallationTarget Version="[12.0]" Id="Microsoft.VisualStudio.Community" />
+        <InstallationTarget Version="[12.0]" Id="Microsoft.VisualStudio.Pro" />
+        <InstallationTarget Version="[15.0]" Id="Microsoft.VisualStudio.Community" />
+        <InstallationTarget Version="[15.0]" Id="Microsoft.VisualStudio.Pro" />
+    </Installation>
+    <Dependencies>
+        <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+    </Dependencies>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    </Assets>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0.26606.0,16.0)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
 </PackageManifest>
