@@ -3,7 +3,7 @@
 
 https://www.youtube.com/watch?v=saxFpmNq_Vw
 
-A graphical Visualizer for FASTBuild (Supports VS 2012, 2013, 2015). Now officially supported by FASTBuild starting v0.92 
+A graphical Visualizer for FASTBuild (Supports VS 2012, 2013, 2015, 2017). Now officially supported by FASTBuild starting v0.92 
 
 
 
