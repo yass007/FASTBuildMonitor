@@ -1,11 +1,8 @@
-################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+/FASTBuildMonitorVSIX/.vs/
+*.csproj.user
 
 /FASTBuildMonitorVSIX/FASTBuildMonitorStandalone/bin
 /FASTBuildMonitorVSIX/FASTBuildMonitorVSIX/bin
-/FASTBuildMonitorVSIX/.vs/FASTBuildMonitorVSIX/v14
 /FASTBuildMonitorVSIX/FASTBuildMonitorVSIX/lib
 /FASTBuildMonitorVSIX/FASTBuildMonitorVSIX/obj
 /FASTBuildMonitorVSIX/FASTBuildMonitorStandalone/obj
-FASTBuildMonitorVSIX/.vs/FASTBuildMonitorVSIX/v15/Server/sqlite3/storage.ide
