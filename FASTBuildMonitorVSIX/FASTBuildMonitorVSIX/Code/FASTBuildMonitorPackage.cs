@@ -6,7 +6,7 @@
 using System;
 using System.ComponentModel.Design;
 using System.Diagnostics;
-using Microsoft.VisualStudio.ExtensionManager;
+//using Microsoft.VisualStudio.ExtensionManager;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -163,6 +163,8 @@ namespace FASTBuildMonitorVSIX
             {
                 outInfo = new VSIXPackageInformation();
 
+                // Commented out because of ExtensionManager/InstalledExtension assemblies not being available.
+                /*
                 // get ExtensionManager
                 IVsExtensionManager manager = GetService(typeof(SVsExtensionManager)) as IVsExtensionManager;
                 // get your extension by Product Id
@@ -172,6 +174,7 @@ namespace FASTBuildMonitorVSIX
                 outInfo._authors = myExtension.Header.Author;
                 outInfo._packageName = myExtension.Header.Name;
                 outInfo._moreInfoURL = myExtension.Header.MoreInfoUrl.OriginalString;
+                */
             }
             catch (System.Exception ex)
             {
