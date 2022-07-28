@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>b400aad0-590a-4fee-aab1-91d669def936</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>FASTBuildMonitorShared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Code\FASTBuildMonitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Code\FASTBuildMonitorCommand.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Code\FASTBuildMonitorControl.xaml.cs">
+      <DependentUpon>FASTBuildMonitorControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Code\FASTBuildMonitorPackage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Code\GifImage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Code\SystemPerformanceGraphsCanvas.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Code\TextUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Code\Timebar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Resources\Images.Designer.cs">
+      <DependentUpon>Images.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="$(MSBuildThisFileDirectory)Code\FASTBuildMonitorControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\Images.resx">
+      <SubType>Designer</SubType>
+      <LastGenOutput>Images.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)VSPackage.resx">
+      <MergeWithCTO>true</MergeWithCTO>
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Resources\box.gif" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\BuildStatusErrors.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\BuildStatusOK.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\BuildStatusWarnings.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\Failed.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\HeartBeat.gif" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\LODBlock.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\ProgressBar.gif" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\race_flag_lost.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\race_flag_win.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\Running.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\SettingsTabIcon.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\Spinner.gif" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\Success-cached.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\Success-preprocessed.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\TextOutputTabIcon.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\TimeLineTabIcon.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\Timeout.png" />
+    <None Include="$(MSBuildThisFileDirectory)Resources\Warning.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)index.html" />
+    <Content Include="$(MSBuildThisFileDirectory)Resources\FASTBuildMonitorCommand.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Resources\FASTBuildMonitorPackage.ico" />
+    <Content Include="$(MSBuildThisFileDirectory)Resources\race_flag.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Resources\Success-code.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Resources\Success-noncode.png" />
+    <Content Include="$(MSBuildThisFileDirectory)stylesheet.css" />
+  </ItemGroup>
+</Project>

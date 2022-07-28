@@ -10,7 +10,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FASTBuildMonitorStandalone"
 		{E50A8B0A-8964-4ADB-B504-71DD7228B20A} = {E50A8B0A-8964-4ADB-B504-71DD7228B20A}
 	EndProjectSection
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "FASTBuildMonitorShared", "FASTBuildMonitorShared\FASTBuildMonitorShared.shproj", "{B400AAD0-590A-4FEE-AAB1-91D669DEF936}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		FASTBuildMonitorShared\FASTBuildMonitorShared.projitems*{b400aad0-590a-4fee-aab1-91d669def936}*SharedItemsImports = 13
+		FASTBuildMonitorShared\FASTBuildMonitorShared.projitems*{e50a8b0a-8964-4adb-b504-71dd7228b20a}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
