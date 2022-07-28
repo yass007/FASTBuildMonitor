@@ -87,7 +87,7 @@ namespace FASTBuildMonitorVSIX
 
             OutputWindowComboBox.SelectionChanged += OutputWindowComboBox_SelectionChanged;
 
-            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
             {
                 //update timer
                 _timer = new DispatcherTimer();
@@ -132,6 +132,8 @@ namespace FASTBuildMonitorVSIX
 
         private void OutputTextBox_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
             if (e.ChangedButton == MouseButton.Left)
             {
                 TextBox tb = sender as TextBox;

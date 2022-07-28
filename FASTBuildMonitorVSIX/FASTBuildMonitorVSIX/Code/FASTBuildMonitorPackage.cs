@@ -17,6 +17,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
 using EnvDTE;
 using EnvDTE80;
+using Microsoft;
 
 namespace FASTBuildMonitorVSIX
 {
@@ -73,18 +74,23 @@ namespace FASTBuildMonitorVSIX
         /// </summary>
         protected override void Initialize()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             FASTBuildMonitorCommand.Initialize(this);
             base.Initialize();
 
             _instance = this;
 
             _dte = (DTE2)base.GetService(typeof(DTE));
+            Assumes.Present(_dte);
         }
 
         public static int count = 0;
 
         public void ListWindows()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             OutputWindow outWindow = _dte.ToolWindows.OutputWindow;
             outWindow.Parent.AutoHides = false;
             outWindow.Parent.Activate();
