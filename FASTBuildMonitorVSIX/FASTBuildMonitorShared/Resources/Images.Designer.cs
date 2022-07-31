@@ -39,7 +39,13 @@ namespace FASTBuildMonitorVSIX.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FASTBuildMonitorVSIX.Resources.Images", typeof(Images).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager(
+                        #if Dev_17
+                            "FASTBuildMonitorVSIX_Dev17.Resources.Images",
+                        #else
+                            "FASTBuildMonitorVSIX.Resources.Images",
+                        #endif
+                        typeof(Images).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
